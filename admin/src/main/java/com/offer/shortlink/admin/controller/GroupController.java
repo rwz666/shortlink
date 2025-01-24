@@ -43,7 +43,7 @@ public class GroupController {
      * 修改短链接分组
      */
     @PutMapping("/api/short-link/v1/group")
-    public Result<Void> deleteGroup(@RequestBody ShortLinkGroupUpdateReqDTO requestParam) {
+    public Result<Void> updateGroup(@RequestBody ShortLinkGroupUpdateReqDTO requestParam) {
         groupService.updateGroup(requestParam);
         return Results.success();
     }
