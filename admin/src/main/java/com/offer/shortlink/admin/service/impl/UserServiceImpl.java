@@ -117,7 +117,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
          */
 
         stringRedisTemplate.opsForHash().put(key, uuid, JSON.toJSONString(userDO));
-        stringRedisTemplate.expire(key, 30L, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(key, 30L, TimeUnit.DAYS);
         return new UserLoginRespDTO(uuid);
     }
 
