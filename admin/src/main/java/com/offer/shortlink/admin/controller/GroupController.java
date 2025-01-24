@@ -2,7 +2,7 @@ package com.offer.shortlink.admin.controller;
 
 import com.offer.shortlink.admin.common.convention.result.Result;
 import com.offer.shortlink.admin.common.convention.result.Results;
-import com.offer.shortlink.admin.dto.req.ShortLinkGroupSaveDTO;
+import com.offer.shortlink.admin.dto.req.ShortLinkGroupSaveReqDTO;
 import com.offer.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
 import com.offer.shortlink.admin.service.GroupService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class GroupController {
      * 新增短链接分组
      */
     @PostMapping("/api/short-link/v1/group")
-    public Result<Void> saveGroup(@RequestBody ShortLinkGroupSaveDTO requestParam) {
+    public Result<Void> saveGroup(@RequestBody ShortLinkGroupSaveReqDTO requestParam) {
         groupService.saveGroup(requestParam.getName());
         return Results.success();
     }

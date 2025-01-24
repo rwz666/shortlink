@@ -7,7 +7,7 @@ import lombok.Data;
  * @since 2025/1/24
  */
 @Data
-public class ShortLinkGroupSaveDTO {
+public class ShortLinkGroupSaveReqDTO {
 
     private String name;
 }
