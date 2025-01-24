@@ -27,7 +27,11 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
             gid = RandomStringUtil.generateRandom();
         } while (hasGId(gid));
         // TODO：设置创建分组用户名
-        GroupDO groupDO = GroupDO.builder().gid(gid).name(groupName).build();
+        GroupDO groupDO = GroupDO.builder()
+                .gid(gid)
+                .name(groupName)
+                .sortOrder(0)
+                .build();
         int inserted = baseMapper.insert(groupDO);
         if (inserted < 1) {
             throw new ServiceException("数据库插入失败");
