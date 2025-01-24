@@ -3,7 +3,11 @@ package com.offer.shortlink.admin.dao.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.offer.shortlink.admin.common.database.BaseDO;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author rwz
@@ -12,7 +16,10 @@ import lombok.Data;
  */
 @Data
 @TableName("t_group")
-public class GroupDO {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class GroupDO extends BaseDO {
 
     @TableId(type = IdType.AUTO)
     /**
@@ -34,20 +41,5 @@ public class GroupDO {
      * 创建分组用户名
      */
     private String username;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 修改时间
-     */
-    private Date updateTime;
-
-    /**
-     * 删除标识 0：未删除 1：已删除
-     */
-    private Integer delFlag;
 
 }
