@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.offer.shortlink.admin.common.biz.user.UserContext;
 import com.offer.shortlink.admin.common.convention.exception.ServiceException;
 import com.offer.shortlink.admin.dao.entity.GroupDO;
 import com.offer.shortlink.admin.dao.mapper.GroupMapper;
@@ -30,9 +31,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
         do {
             gid = RandomStringUtil.generateRandom();
         } while (hasGId(gid));
-        // TODO：设置创建分组用户名
         GroupDO groupDO = GroupDO.builder()
                 .gid(gid)
+                .username(UserContext.getUsername())
                 .name(groupName)
                 .sortOrder(0)
                 .build();
@@ -46,8 +47,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     public List<ShortLinkGroupRespDTO> listGroup() {
 
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
-                // TODO 从当前上下文获取用户名
-                .eq(GroupDO::getUsername, "贰三四1")
+                .eq(GroupDO::getUsername, UserContext.getUsername())
                 .eq(GroupDO::getDelFlag, 0)
                 .orderByDesc(GroupDO::getSortOrder)
                 .orderByDesc(GroupDO::getUpdateTime);
