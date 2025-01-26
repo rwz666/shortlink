@@ -6,7 +6,7 @@ package com.offer.shortlink.admin.test;
  */
 public class UserTableShardingTest {
 
-    private static String SQL = """
+    private static final String SQL = """
             CREATE TABLE `t_user_%d` (
               `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
               `username` varchar(255) DEFAULT NULL COMMENT '用户名',
