@@ -1,9 +1,12 @@
 package com.offer.shortlink.project.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.offer.shortlink.project.common.convention.result.Result;
 import com.offer.shortlink.project.common.convention.result.Results;
 import com.offer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
+import com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import com.offer.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.offer.shortlink.project.service.ShortLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,4 +32,13 @@ public class ShortLinkController {
         ShortLinkCreateRespDTO shortLinkCreateRespDTO = shortLinkService.createShortLink(requestParam);
         return Results.success(shortLinkCreateRespDTO);
     }
+
+    /**
+     * 短链接分页查询
+     */
+    @PostMapping("/api/short-link/admin/v1/page")
+    public Result<IPage<ShortLinkPageRespDTO>> pageShortLink(@RequestBody ShortLinkPageReqDTO requestParam){
+        return Results.success(shortLinkService.pageShortLink(requestParam));
+    }
+
 }

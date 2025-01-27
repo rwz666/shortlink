@@ -1,12 +1,17 @@
 package com.offer.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.offer.shortlink.project.common.convention.exception.ServiceException;
 import com.offer.shortlink.project.dao.entity.ShortLinkDO;
 import com.offer.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.offer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
+import com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.project.dto.resp.ShortLinkCreateRespDTO;
+import com.offer.shortlink.project.dto.resp.ShortLinkPageRespDTO;
 import com.offer.shortlink.project.service.ShortLinkService;
 import com.offer.shortlink.project.toolkit.HashUtil;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,7 @@ import java.util.UUID;
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
 
     private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
+    private final ShortLinkMapper shortLinkMapper;
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
@@ -54,6 +60,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .originUrl(requestParam.getOriginUrl())
                 .fullShortUrl(shortLinkDO.getFullShortUrl())
                 .build();
+    }
+
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getEnableStatus, 0)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
+        return resultPage.convert(item -> BeanUtil.toBean(item, ShortLinkPageRespDTO.class));
     }
 
     private String generateShortLinkSuffix(ShortLinkCreateReqDTO requestParam) {
