@@ -7,7 +7,7 @@ package com.offer.shortlink.project.test;
 public class ShortLinkTableShardingTest {
 
     private static String SQL = """
-            CREATE TABLE `t_link_%d` (
+            CREATE TABLE `t_link_%s` (
               `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
               `domain` varchar(128) DEFAULT NULL COMMENT '域名',
               `short_uri` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_cs DEFAULT NULL COMMENT '短链接',
@@ -15,6 +15,7 @@ public class ShortLinkTableShardingTest {
               `origin_url` varchar(1024) DEFAULT NULL COMMENT '原始链接',
               `click_num` int DEFAULT NULL COMMENT '点击量',
               `gid` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT 'default' COMMENT '分组标识',
+              `favicon` varchar(256) DEFAULT NULL COMMENT '网站图标',
               `enable_status` tinyint(1) DEFAULT NULL COMMENT '启用标识 0：启用 1：未启用',
               `create_type` tinyint(1) DEFAULT NULL COMMENT '创建类型 0：控制台 1：接口',
               `valid_date_type` datetime DEFAULT NULL COMMENT '有效期类型 0：永久有效 1：自定义',
@@ -31,7 +32,7 @@ public class ShortLinkTableShardingTest {
 
     public static void main(String[] args) {
         for (int i = 0; i < 15; i++) {
-            System.out.printf(SQL+ "\n%n",i);
+            System.out.printf(SQL + "\n%n", i);
         }
     }
 
