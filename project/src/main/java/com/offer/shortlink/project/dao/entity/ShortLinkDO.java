@@ -73,7 +73,7 @@ public class ShortLinkDO extends BaseDO {
     /**
      * 有效期类型 0：永久有效 1：自定义
      */
-    private Date validDateType;
+    private Integer validDateType;
 
     /**
      * 有效期
