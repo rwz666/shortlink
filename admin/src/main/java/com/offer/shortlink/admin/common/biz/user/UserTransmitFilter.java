@@ -53,17 +53,20 @@ public class UserTransmitFilter implements Filter {
 
         String username = httpServletRequest.getHeader("username");
         String token = httpServletRequest.getHeader("token");
-        if (StrUtil.isAllNotBlank(username, token)) {
+        if (!StrUtil.isAllNotBlank(username, token)) {
             returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(UserErrorCodeEnum.USER_TOKEN_FAIL))));
+            return;
         }
         Object userInfoJsonStr = null;
         try {
             userInfoJsonStr = stringRedisTemplate.opsForHash().get("login_" + username, token);
             if (userInfoJsonStr == null) {
                 returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(UserErrorCodeEnum.USER_TOKEN_FAIL))));
+                return;
             }
         } catch (Exception ex) {
             returnJson((HttpServletResponse) servletResponse, JSON.toJSONString(Results.failure(new ClientException(UserErrorCodeEnum.USER_TOKEN_FAIL))));
+            return;
         }
         UserInfoDTO userInfoDTO = JSON.parseObject((String) userInfoJsonStr, UserInfoDTO.class);
         UserContext.setUser(userInfoDTO);
