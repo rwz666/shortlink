@@ -29,6 +29,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public void saveGroup(String groupName) {
+        // TODO：优化查询逻辑，分片键是username
         String gid;
         do {
             gid = RandomStringUtil.generateRandom();
