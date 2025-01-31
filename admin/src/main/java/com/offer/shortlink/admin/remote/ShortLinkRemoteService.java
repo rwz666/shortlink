@@ -8,9 +8,11 @@ import com.offer.shortlink.admin.common.convention.result.Result;
 import com.offer.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import com.offer.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
+import com.offer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author rwz
@@ -25,16 +27,19 @@ public interface ShortLinkRemoteService {
 
     /**
      * 创建短链接
+     *
      * @param requestParam 创建短链接请求参数
      * @return 短链接创建响应
      */
     default Result<ShortLinkCreateRespDTO> createShortLink(ShortLinkCreateReqDTO requestParam) {
         String resultBodyStr = HttpUtil.post(SHORT_LINK_PROJECT + "/api/short-link/v1/create", JSON.toJSONString(requestParam));
-        return JSON.parseObject(resultBodyStr, new TypeReference<>() {});
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
     }
 
     /**
      * 分页查询短链接
+     *
      * @param requestParam 分页查询短链接请求参数
      * @return 分页查询短链接
      */
@@ -44,6 +49,20 @@ public interface ShortLinkRemoteService {
         requestMap.put("current", requestParam.getCurrent());
         requestMap.put("size", requestParam.getSize());
         String resultJsonStr = HttpUtil.get(SHORT_LINK_PROJECT + "/api/short-link/v1/page", requestMap);
+        return JSON.parseObject(resultJsonStr, new TypeReference<>() {
+        });
+    }
+
+    /**
+     * 查询分组短链接总量
+     *
+     * @param requestParam 查询分组短链接总量请求参数
+     * @return 查询分组短链接总量响应
+     */
+    default Result<List<ShortLinkGroupCountQueryRespDTO>> listShortLinkGroupCount(List<String> requestParam) {
+        HashMap<String, Object> requestMap = new HashMap<>();
+        requestMap.put("requestParam", requestParam);
+        String resultJsonStr = HttpUtil.get(SHORT_LINK_PROJECT + "/api/short-link/v1/count", requestMap);
         return JSON.parseObject(resultJsonStr, new TypeReference<>() {
         });
     }
