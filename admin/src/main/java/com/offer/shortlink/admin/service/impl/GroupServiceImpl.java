@@ -40,14 +40,19 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public void saveGroup(String groupName) {
+        saveGroup(UserContext.getUsername(), groupName);
+    }
+
+    @Override
+    public void saveGroup(String username, String groupName) {
         // TODO：优化查询逻辑，分片键是username
         String gid;
         do {
             gid = RandomStringUtil.generateRandom();
-        } while (hasGId(gid));
+        } while (hasGId(username, gid));
         GroupDO groupDO = GroupDO.builder()
                 .gid(gid)
-                .username(UserContext.getUsername())
+                .username(username)
                 .name(groupName)
                 .sortOrder(0)
                 .build();
@@ -81,12 +86,14 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     /**
      * 查询数据库中是否有GId
      *
-     * @param gid 分组标识
+     * @param username 用户名
+     * @param gid      分组标识
      * @return 数据库中有返回GId True，没有返回 False
      */
-    private Boolean hasGId(String gid) {
+    private Boolean hasGId(String username, String gid) {
         LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
-                .eq(GroupDO::getGid, gid);
+                .eq(GroupDO::getGid, gid)
+                .eq(GroupDO::getUsername, Optional.ofNullable(username).orElse(UserContext.getUsername()));
         GroupDO groupDO = baseMapper.selectOne(queryWrapper);
         return groupDO != null;
     }
