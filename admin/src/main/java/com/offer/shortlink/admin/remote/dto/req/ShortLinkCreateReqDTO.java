@@ -28,7 +28,6 @@ public class ShortLinkCreateReqDTO {
      */
     private String gid;
 
-
     /**
      * 创建类型 0：控制台 1：接口
      */
@@ -37,7 +36,6 @@ public class ShortLinkCreateReqDTO {
     /**
      * 有效期类型 0：永久有效 1：自定义
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Integer validDateType;
 
     /**
