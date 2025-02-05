@@ -29,6 +29,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -65,6 +68,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         shortLinkDO.setShortUri(shortLinkSuffix);
         shortLinkDO.setFullShortUrl(fullShortUrl);
         shortLinkDO.setEnableStatus(0);
+        shortLinkDO.setFavicon(getFaviconUrl(requestParam.getOriginUrl()));
         ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
                 .gid(requestParam.getGid())
                 .fullShortUrl(fullShortUrl)
@@ -244,5 +248,23 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             curGenerateCount++;
         }
         return shortUri;
+    }
+
+    @SneakyThrows
+    private String getFaviconUrl(String url) {
+        // 发送 HTTP 请求并获取 HTML 文档
+        Document document = Jsoup.connect(url).get();
+        // 查找 favicon 的 <link> 标签
+        Element faviconElement = document.select("link[rel~=(?i)^(shortcut|icon|shortcut icon)$]").first();
+        if (faviconElement != null) {
+            // 获取 favicon 的 URL
+            String faviconUrl = faviconElement.attr("href");
+            // 如果 URL 是相对路径，补全为绝对路径
+            if (!faviconUrl.startsWith("http")) {
+                faviconUrl = url + (faviconUrl.startsWith("/") ? "" : "/") + faviconUrl;
+            }
+            return faviconUrl;
+        }
+        return null;
     }
 }
