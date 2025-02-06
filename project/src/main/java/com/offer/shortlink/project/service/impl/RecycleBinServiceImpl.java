@@ -10,6 +10,7 @@ import com.offer.shortlink.project.common.convention.exception.ServiceException;
 import com.offer.shortlink.project.dao.entity.ShortLinkDO;
 import com.offer.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.offer.shortlink.project.dto.req.RecycleBinRecoverReqDTO;
+import com.offer.shortlink.project.dto.req.RecycleBinRemoveReqDTO;
 import com.offer.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkRecycleBinPageReqDTO;
 import com.offer.shortlink.project.dto.resp.ShortLinkPageRespDTO;
@@ -82,5 +83,18 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
         if (update < 1) {
             throw new ServiceException("短链接恢复失败");
         }
+    }
+
+    @Override
+    public void removeRecycleBin(RecycleBinRemoveReqDTO requestParam) {
+        String gid = requestParam.getGid();
+        String fullShortUrl = requestParam.getFullShortUrl();
+        LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, gid)
+                .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+                .eq(ShortLinkDO::getEnableStatus, 1)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        stringRedisTemplate.delete(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
+        baseMapper.delete(updateWrapper);
     }
 }
