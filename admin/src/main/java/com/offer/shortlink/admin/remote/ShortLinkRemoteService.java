@@ -113,4 +113,13 @@ public interface ShortLinkRemoteService {
         return JSON.parseObject(resultJsonStr, new TypeReference<>() {
         });
     }
+
+    /**
+     * 回复回收站短链接
+     *
+     * @param requestParam 恢复回收站短链接请求参数
+     */
+    default void recoverRecycleBin(RecycleBinRecoverReqDTO requestParam) {
+        HttpUtil.post(SHORT_LINK_PROJECT + "/api/short-link/v1/recycle-bin/recover", JSON.toJSONString(requestParam));
+    }
 }
