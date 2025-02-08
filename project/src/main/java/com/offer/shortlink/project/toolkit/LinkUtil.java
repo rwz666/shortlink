@@ -114,4 +114,18 @@ public class LinkUtil {
             return "Unknown";
         }
     }
+
+    /**
+     * 获取访问设备类型
+     *
+     * @param request 请求
+     * @return 设备类型
+     */
+    public static String getDevice(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent.toLowerCase().contains("mobile")) {
+            return "Mobile";
+        }
+        return "PC";
+    }
 }
