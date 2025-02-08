@@ -23,7 +23,7 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
         VALUES
             (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.pv}, #{bean.uv}, #{bean.uip}, #{bean.hour}, #{bean.weekday}, NOW(), NOW(),0)
         ON DUPLICATE KEY UPDATE
-            pv = pv + #{bean.pv}, uv = uv#{bean.uv}, uip = uip + #{bean.uip}, update_time = NOW();
+            pv = pv + #{bean.pv}, uv = uv + #{bean.uv}, uip = uip + #{bean.uip}, update_time = NOW();
     """)
     void shortLinkStats(@Param("bean") LinkAccessStatsDO linkAccessStatsDO);
 }

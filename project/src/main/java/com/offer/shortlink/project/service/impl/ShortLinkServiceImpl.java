@@ -18,14 +18,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.offer.shortlink.project.common.convention.exception.ClientException;
 import com.offer.shortlink.project.common.convention.exception.ServiceException;
 import com.offer.shortlink.project.common.enums.ValidDateTypeEnum;
-import com.offer.shortlink.project.dao.entity.LinkAccessStatsDO;
-import com.offer.shortlink.project.dao.entity.LinkLocaleStatsDO;
-import com.offer.shortlink.project.dao.entity.ShortLinkDO;
-import com.offer.shortlink.project.dao.entity.ShortLinkGotoDO;
-import com.offer.shortlink.project.dao.mapper.LinkAccessStatsMapper;
-import com.offer.shortlink.project.dao.mapper.LinkLocaleStatsMapper;
-import com.offer.shortlink.project.dao.mapper.ShortLinkGotoMapper;
-import com.offer.shortlink.project.dao.mapper.ShortLinkMapper;
+import com.offer.shortlink.project.dao.entity.*;
+import com.offer.shortlink.project.dao.mapper.*;
 import com.offer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
@@ -76,6 +70,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final RedissonClient redissonClient;
     private final LinkAccessStatsMapper linkAccessStatsMapper;
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+    private final LinkOsStatsMapper linkOsStatsMapper;
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapApiKey;  // 高德地图 API Key
@@ -287,6 +282,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 gid = shortLinkGotoDO.getGid();
             }
             Date nowDate = new Date();
+            //1.基础访问数据统计
             Week weekday = DateUtil.dayOfWeekEnum(nowDate);
             int hour = DateUtil.hour(nowDate, true);
             String actualIp = LinkUtil.getActualIp(request);
@@ -303,7 +299,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .hour(hour)
                     .build();
             linkAccessStatsMapper.shortLinkStats(linkAccessStatsDO);
-
+            //2.地区访问数据统计
             //调用高德地图api，根据ip获取地理位置
             HashMap<String, Object> getLocaleParam = new HashMap<>();
             getLocaleParam.put("key", statsLocaleAmapApiKey);
@@ -326,7 +322,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
             }
-
+            //3.操作系统访问数据统计
+            LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
+                    .gid(gid)
+                    .fullShortUrl(fullShortUrl)
+                    .date(nowDate)
+                    .os(LinkUtil.getOs(request))
+                    .cnt(1)
+                    .build();
+            linkOsStatsMapper.shortLinkOsStats(linkOsStatsDO);
         } catch (Throwable e) {
             log.error("短链接：{}访问量统计异常", fullShortUrl, e);
         }
