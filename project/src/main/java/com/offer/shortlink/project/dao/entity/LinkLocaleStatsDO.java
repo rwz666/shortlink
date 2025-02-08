@@ -13,15 +13,15 @@ import java.util.Date;
 
 /**
  * @author rwz
- * @since 2025/2/7
- * 短链接访问基础数据统计实体
+ * @since 2025/2/8
+ * 短链接访问地区数据统计实体
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("t_link_access_stats")
-public class LinkAccessStatsDO extends BaseDO {
+@TableName("t_link_locale_stats")
+public class LinkLocaleStatsDO extends BaseDO {
 
     @TableId(type = IdType.AUTO)
     /**
@@ -47,25 +47,26 @@ public class LinkAccessStatsDO extends BaseDO {
     /**
      * 访问量
      */
-    private Integer pv;
+    private Integer cnt;
 
     /**
-     * 独立访客数
+     * 省份
      */
-    private Integer uv;
+    private String province;
 
     /**
-     * 独立ip数
+     * 城市名称
      */
-    private Integer uip;
+    private String city;
 
     /**
-     * 小时
+     * 城市编码
      */
-    private Integer hour;
+    private String adcode;
 
     /**
-     * 星期
+     * 国家标识
      */
-    private Integer weekday;
+    private String country;
+
 }

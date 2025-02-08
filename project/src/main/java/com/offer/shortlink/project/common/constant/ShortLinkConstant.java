@@ -12,4 +12,9 @@ public class ShortLinkConstant {
      */
     public static long DEFAULT_CACHE_VALID_TIME = 2592000000L;
 
+    /**
+     * 高德api 根据ip获取地理位置
+     */
+    public static String AMAP_REMOTE_GET_LOCALE_BY_IP_URL = "https://restapi.amap.com/v3/ip";
+
 }
