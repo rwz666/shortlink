@@ -32,6 +32,7 @@ public class LinkUtil {
 
     /**
      * 获取请求真实IP
+     *
      * @param request 当前请求
      * @return 用户真实IP
      */
@@ -61,6 +62,7 @@ public class LinkUtil {
 
     /**
      * 获取用户操作系统类型
+     *
      * @param request 请求
      * @return 操作系统类型
      */
@@ -85,6 +87,31 @@ public class LinkUtil {
             return "iOS";
         } else {
             return "Unknown";  // 其他未知类型
+        }
+    }
+
+    /**
+     * 获取用户访问浏览器类型
+     *
+     * @param request 请求
+     * @return 浏览器类型
+     */
+    public static String getBrowserName(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent.toLowerCase().contains("edg")) {
+            return "Microsoft Edge";
+        } else if (userAgent.toLowerCase().contains("chrome")) {
+            return "Google Chrome";
+        } else if (userAgent.toLowerCase().contains("firefox")) {
+            return "Mozilla Firefox";
+        } else if (userAgent.toLowerCase().contains("safari")) {
+            return "Apple Safari";
+        } else if (userAgent.toLowerCase().contains("opera")) {
+            return "Opera";
+        } else if (userAgent.toLowerCase().contains("msie") || userAgent.toLowerCase().contains("trident")) {
+            return "Internet Explorer";
+        } else {
+            return "Unknown";
         }
     }
 }
