@@ -17,11 +17,13 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      *
      * @param linkAccessStatsDO 短链接访问基础数据实体
      */
-    @Insert("INSERT INTO t_link_access_stats ( full_short_url, gid, date, pv, uv, uip, HOUR, weekday, create_time, update_time, del_flag )\n" +
-            "VALUES" +
-            "( #{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.pv}, #{bean.uv}, #{bean.uip}, #{bean.hour}, #{bean.weekday}, NOW(), NOW(), 0)" +
-            "ON DUPLICATE KEY UPDATE pv = pv + #{bean.pv}," +
-            "uv = uv + #{bean.uv}," +
-            "uip = uip + #{bean.uip};")
+    @Insert(
+    """
+    INSERT INTO t_link_access_stats ( full_short_url, gid, date, pv, uv, uip, HOUR, weekday, create_time, update_time, del_flag )
+        VALUES
+            (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.pv}, #{bean.uv}, #{bean.uip}, #{bean.hour}, #{bean.weekday}, NOW(), NOW(),0)
+        ON DUPLICATE KEY UPDATE
+            pv = pv + #{bean.pv}, uv = uv#{bean.uv}, uip = uip + #{bean.uip}, update_time = NOW();
+    """)
     void shortLinkStats(@Param("bean") LinkAccessStatsDO linkAccessStatsDO);
 }
