@@ -262,13 +262,13 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .map(Cookie::getValue)
                         .ifPresentOrElse(item -> {
                             //如果存在uv的cookie，说明不是该用户第一次请求短链接
-                            Long add = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, item);
-                            uvFirstFlag.set(add != null && add > 0L);
+                            Long uvAdd = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, item);
+                            uvFirstFlag.set(uvAdd != null && uvAdd > 0L);
                         }, addResponseCookieTask);
             } else {
                 addResponseCookieTask.run();
             }
-
+            //gid为null，重新查询数据库获取
             if (StrUtil.isBlank(gid)) {
                 LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
                         .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
@@ -278,12 +278,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             Date nowDate = new Date();
             Week weekday = DateUtil.dayOfWeekEnum(nowDate);
             int hour = DateUtil.hour(nowDate, true);
+            String actualIp = LinkUtil.getActualIp(request);
+            Long uipAdd = stringRedisTemplate.opsForSet().add("short-link:stats:uip:" + fullShortUrl, actualIp);
+            boolean uipFirstFlag = uipAdd != null && uipAdd > 0L;
             LinkAccessStatsDO linkAccessStatsDO = LinkAccessStatsDO.builder()
                     .gid(gid)
                     .fullShortUrl(fullShortUrl)
                     .pv(1)
                     .uv(uvFirstFlag.get() ? 1 : 0)
-                    .uip(1)
+                    .uip(uipFirstFlag ? 1 : 0)
                     .date(nowDate)
                     .weekday(weekday.getIso8601Value())
                     .hour(hour)
