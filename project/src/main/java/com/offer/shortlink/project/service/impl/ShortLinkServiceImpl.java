@@ -314,6 +314,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             String localeResultStr = HttpUtil.get(AMAP_REMOTE_GET_LOCALE_BY_IP_URL, getLocaleParam);
             JSONObject localeResultObj = JSON.parseObject(localeResultStr);
             String infoCode = localeResultObj.getString("infocode");
+            String actualProvince = "", actualCity = "";
             if (Objects.equals(infoCode, "10000")) {
                 String province = localeResultObj.getString("province");
                 boolean unknownFlag = Objects.equals(province, "[]");
@@ -323,8 +324,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .date(nowDate)
                         .cnt(1)
                         .country("中国")
-                        .province(unknownFlag ? "未知" : province)
-                        .city(unknownFlag ? "未知" : localeResultObj.getString("city"))
+                        .province(actualProvince = unknownFlag ? "未知" : province)
+                        .city(actualCity = unknownFlag ? "未知" : localeResultObj.getString("city"))
                         .adcode(unknownFlag ? "未知" : localeResultObj.getString("adcode"))
                         .build();
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
@@ -349,7 +350,29 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .browser(browser)
                     .build();
             linkBrowserStatsMapper.shortLinkBrowserStats(linkBrowserStatsDO);
-            //5.访问日志数据统计
+
+            //5.访问设备数据统计
+            String device = LinkUtil.getDevice(request);
+            LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
+                    .gid(gid)
+                    .fullShortUrl(fullShortUrl)
+                    .cnt(1)
+                    .date(nowDate)
+                    .device(device)
+                    .build();
+            linkDeviceStatsMapper.shortLinkDeviceStats(linkDeviceStatsDO);
+            //6.访问网络数据统计
+            String network = LinkUtil.getNetwork(request);
+            LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
+                    .gid(gid)
+                    .fullShortUrl(fullShortUrl)
+                    .cnt(1)
+                    .date(nowDate)
+                    .network(network)
+                    .build();
+            linkNetworkStatsMapper.shortLinkNetworkStats(linkNetworkStatsDO);
+
+            //7.访问日志数据统计
             LinkAccessLogsDO linkAccessLogsDO = LinkAccessLogsDO.builder()
                     .gid(gid)
                     .fullShortUrl(fullShortUrl)
@@ -358,26 +381,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .ip(actualIp)
                     .browser(browser)
                     .user(uv.get())
+                    .device(device)
+                    .network(network)
+                    .locale(StrUtil.join("-", "中国", actualProvince, actualCity))
                     .build();
             linkAccessLogsMapper.insert(linkAccessLogsDO);
-            //6.访问设备数据统计
-            LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
-                    .gid(gid)
-                    .fullShortUrl(fullShortUrl)
-                    .cnt(1)
-                    .date(nowDate)
-                    .device(LinkUtil.getDevice(request))
-                    .build();
-            linkDeviceStatsMapper.shortLinkDeviceStats(linkDeviceStatsDO);
-            //7.访问网络数据统计
-            LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
-                    .gid(gid)
-                    .fullShortUrl(fullShortUrl)
-                    .cnt(1)
-                    .date(nowDate)
-                    .network(LinkUtil.getNetwork(request))
-                    .build();
-            linkNetworkStatsMapper.shortLinkNetworkStats(linkNetworkStatsDO);
         } catch (Throwable e) {
             log.error("短链接：{}访问量统计异常", fullShortUrl, e);
         }
