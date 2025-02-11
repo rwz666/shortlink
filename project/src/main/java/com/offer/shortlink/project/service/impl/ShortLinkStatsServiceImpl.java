@@ -123,7 +123,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
             item.setRatio(Math.round(ratio * 100) / 100.0);
         });
 
-        //TODO：访问设备详情
+        //访问设备详情
         List<HashMap<String, Object>> listDeviceStatsByShortLink = linkDeviceStatsMapper.listDeviceStatsByShortLink(requestParam);
         List<ShortLinkStatsDeviceRespDTO> deviceStats = BeanUtil.copyToList(listDeviceStatsByShortLink, ShortLinkStatsDeviceRespDTO.class);
         int deviceSumCnt = deviceStats.stream().mapToInt(ShortLinkStatsDeviceRespDTO::getCnt).sum();
