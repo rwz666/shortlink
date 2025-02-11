@@ -54,4 +54,14 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             ) as user_counts;
             """)
     HashMap<String, Object> findUvTypeCntByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 获取用户在指定时间段是新用户还是老用户
+     */
+    List<HashMap<String, Object>> selectUvTypeByUsers(
+            @Param("gid") String gid,
+            @Param("fullShortUrl") String fullShortUrl,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate,
+            @Param("userSetList") List<String> userSetList);
 }

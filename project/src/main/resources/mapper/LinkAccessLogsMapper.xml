@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.offer.shortlink.project.dao.mapper.LinkAccessLogsMapper">
+
+    <select id="selectUvTypeByUsers" resultType="java.util.HashMap">
+        SELECT
+        user,
+        IF(MIN(create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
+        FROM
+        t_link_access_logs
+        WHERE
+        full_short_url = #{fullShortUrl}
+        AND gid = #{gid}
+        AND user IN
+        <foreach item="user" index="index" collection="userSetList" open="(" separator="," close=")">
+            #{user}
+        </foreach>
+        GROUP BY
+        user
+    </select>
+</mapper>
