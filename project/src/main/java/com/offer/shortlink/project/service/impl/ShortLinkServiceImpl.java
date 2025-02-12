@@ -82,13 +82,24 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
-        ShortLinkDO shortLinkDO = BeanUtil.toBean(requestParam, ShortLinkDO.class);
         String shortLinkSuffix = generateShortLinkSuffix(requestParam);
         String fullShortUrl = requestParam.getDomain() + "/" + shortLinkSuffix;
-        shortLinkDO.setShortUri(shortLinkSuffix);
-        shortLinkDO.setFullShortUrl(fullShortUrl);
-        shortLinkDO.setEnableStatus(0);
-        shortLinkDO.setFavicon(getFaviconUrl(requestParam.getOriginUrl()));
+        ShortLinkDO shortLinkDO = ShortLinkDO.builder()
+                .domain(requestParam.getDomain())
+                .originUrl(requestParam.getOriginUrl())
+                .gid(requestParam.getGid())
+                .createType(requestParam.getCreateType())
+                .validDateType(requestParam.getValidDateType())
+                .validDate(requestParam.getValidDate())
+                .describe(requestParam.getDescribe())
+                .favicon(getFaviconUrl(requestParam.getOriginUrl()))
+                .shortUri(shortLinkSuffix)
+                .fullShortUrl(fullShortUrl)
+                .enableStatus(0)
+                .totalPv(0)
+                .totalUv(0)
+                .totalUip(0)
+                .build();
         ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
                 .gid(requestParam.getGid())
                 .fullShortUrl(fullShortUrl)
