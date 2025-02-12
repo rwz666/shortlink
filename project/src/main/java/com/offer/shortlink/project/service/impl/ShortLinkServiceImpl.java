@@ -265,6 +265,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 uvCookie.setMaxAge(60 * 60 * 24 * 30);//有效期一个月
                 uvCookie.setPath(StrUtil.sub(fullShortUrl, fullShortUrl.indexOf("/"), fullShortUrl.length()));
                 stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, uv.get());
+                uvFirstFlag.set(Boolean.TRUE);
                 response.addCookie(uvCookie);
             };
             if (ArrayUtil.isNotEmpty(cookies)) {
