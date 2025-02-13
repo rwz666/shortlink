@@ -3,6 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.offer.shortlink.project.dao.mapper.LinkAccessLogsMapper">
 
+    <!--根据用户查询Uv类型（新老访客）-->
     <select id="selectUvTypeByUsers" resultType="java.util.HashMap">
         SELECT
         user,
@@ -18,5 +19,23 @@
         </foreach>
         GROUP BY
         user
+    </select>
+
+    <!--根据日志表查询PvUvUip数据-->
+    <select id="findPvUvUipStatsByShortLink"
+            resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
+            SELECT
+            	full_short_url,
+            	gid,
+            	count( USER ) AS pv,
+            	count( DISTINCT USER ) AS uv,
+            	count( DISTINCT ip ) AS uip
+            FROM
+            	t_link_access_logs
+            WHERE
+            	gid = #{bean.gid}
+            	AND full_short_url = #{bean.fullShortUrl}
+            GROUP BY
+                full_short_url, gid;
     </select>
 </mapper>

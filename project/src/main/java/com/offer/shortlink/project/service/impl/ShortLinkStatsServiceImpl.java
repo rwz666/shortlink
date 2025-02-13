@@ -1,6 +1,7 @@
 package com.offer.shortlink.project.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -40,6 +41,12 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
 
         //基础访问数据 每日的 pv、uv、uip
         List<LinkAccessStatsDO> linkStatsByShortLink = linkAccessStatsMapper.linkStatsByShortLink(requestParam);
+        if (CollUtil.isEmpty(linkStatsByShortLink)) {
+            return null;
+        }
+
+        //基础访问数据 总的pv、uv、uip
+        LinkAccessStatsDO pvUvUipStatsByShortLink = linkAccessLogsMapper.findPvUvUipStatsByShortLink(requestParam);
 
         //访问地区数据(仅国内) top10
         List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByShortLink = linkLocaleStatsMapper.listLocaleTop10ByShortLink(requestParam);
@@ -136,6 +143,9 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
             item.setRatio(Math.round(ratio * 100) / 100.0);
         });
         return ShortLinkStatsRespDTO.builder()
+                .pv(pvUvUipStatsByShortLink.getPv())
+                .uv(pvUvUipStatsByShortLink.getUv())
+                .uip(pvUvUipStatsByShortLink.getUip())
                 .daily(BeanUtil.copyToList(linkStatsByShortLink, ShortLinkStatsDailyRespDTO.class))
                 .localeCnStats(listLocaleTop10ByShortLink)
                 .hourStats(hourStats)
