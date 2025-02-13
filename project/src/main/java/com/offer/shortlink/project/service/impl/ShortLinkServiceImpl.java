@@ -76,6 +76,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkAccessLogsMapper linkAccessLogsMapper;
     private final LinkDeviceStatsMapper linkDeviceStatsMapper;
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
+    private final LinkStatsTodayMapper linkStatsTodayMapper;
 
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapApiKey;  // 高德地图 API Key
@@ -271,7 +272,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             AtomicReference<String> uv = new AtomicReference<>();
             Runnable addResponseCookieTask = () -> {
                 //用户第一次请求，添加cookie标识（有效期一个月之后算新用户）
-                uv.set(UUID.fastUUID().toString() );
+                uv.set(UUID.fastUUID().toString());
                 Cookie uvCookie = new Cookie("uv", uv.get());
                 uvCookie.setMaxAge(60 * 60 * 24 * 30);//有效期一个月
                 uvCookie.setPath(StrUtil.sub(fullShortUrl, fullShortUrl.indexOf("/"), fullShortUrl.length()));
@@ -400,6 +401,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             linkAccessLogsMapper.insert(linkAccessLogsDO);
 
             baseMapper.incrementStats(gid, fullShortUrl, 1, uvFirstFlag.get() ? 1 : 0, uipFirstFlag ? 1 : 0);
+
+            //今日访问监控
+            LinkStatsTodayDO linkStatsTodayDO = LinkStatsTodayDO.builder()
+                    .fullShortUrl(fullShortUrl)
+                    .gid(gid)
+                    .todayPv(1)
+                    .todayUv(uvFirstFlag.get() ? 1 : 0)
+                    .todayUip(uipFirstFlag ? 1 : 0)
+                    .date(nowDate)
+                    .build();
+            linkStatsTodayMapper.shortLinkTodayStats(linkStatsTodayDO);
         } catch (Throwable e) {
             log.error("短链接：{}访问量统计异常", fullShortUrl, e);
         }
