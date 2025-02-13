@@ -35,6 +35,7 @@
             WHERE
             	gid = #{bean.gid}
             	AND full_short_url = #{bean.fullShortUrl}
+                AND create_time BETWEEN #{bean.startDate} and #{bean.endDate}
             GROUP BY
                 full_short_url, gid;
     </select>
