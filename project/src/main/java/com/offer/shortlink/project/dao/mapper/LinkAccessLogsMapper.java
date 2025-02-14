@@ -67,6 +67,15 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             @Param("endDate") String endDate,
             @Param("userSetList") List<String> userSetList);
 
+    /**
+     * 获取分组用户在指定时间段是新用户还是老用户
+     */
+    List<HashMap<String, Object>> selectGroupUvTypeByUsers(
+            @Param("gid") String gid,
+            @Param("startDate") String startDate,
+            @Param("endDate") String endDate,
+            @Param("userSetList") List<String> userSetList);
+
 
     /**
      * 根据日志表查询PvUvUip数据

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.offer.shortlink.project.dao.entity.LinkAccessLogsDO;
 import com.offer.shortlink.project.dao.entity.LinkAccessStatsDO;
 import com.offer.shortlink.project.dao.mapper.*;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsAccessRecordReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
@@ -60,7 +61,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         //24小时访问数据统计
         List<Integer> hourStats = new ArrayList<>();
         List<LinkAccessStatsDO> listHourStatsByShortLink = linkAccessStatsMapper.listHourStatsByShortLink(requestParam);
-        for(int i = 0 ; i < 24 ; i ++) {
+        for (int i = 0; i < 24; i++) {
             AtomicInteger hour = new AtomicInteger(i);
             Integer hourCnt = listHourStatsByShortLink.stream()
                     .filter(each -> Objects.equals(each.getHour(), hour.get()))
@@ -77,7 +78,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         //一周分布访问详情
         List<LinkAccessStatsDO> listWeekdayStatsByShortLink = linkAccessStatsMapper.listWeekdayStatsByShortLink(requestParam);
         ArrayList<Integer> weekdayStats = new ArrayList<>();
-        for(int i = 0 ; i < 7 ; i ++) {
+        for (int i = 0; i < 7; i++) {
             AtomicInteger weekday = new AtomicInteger(i);
             Integer weekdayCnt = listWeekdayStatsByShortLink.stream()
                     .filter(each -> Objects.equals(each.getWeekday(), weekday.get()))
@@ -127,7 +128,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         uvTypeStats.add(newUvType);
 
         //访问网络详情
-        List<HashMap<String,Object>> listNetworkStatsByShortLink = linkNetworkStatsMapper.listNetworkStatsByShortLink(requestParam);
+        List<HashMap<String, Object>> listNetworkStatsByShortLink = linkNetworkStatsMapper.listNetworkStatsByShortLink(requestParam);
         List<ShortLinkStatsNetworkRespDTO> networkStats = BeanUtil.copyToList(listNetworkStatsByShortLink, ShortLinkStatsNetworkRespDTO.class);
         int networkSunCnt = networkStats.stream().mapToInt(ShortLinkStatsNetworkRespDTO::getCnt).sum();
         networkStats.forEach(item -> {
@@ -180,7 +181,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         if (CollectionUtil.isEmpty(userSetList)) {
             return actualResult;
         }
-        List<HashMap<String,Object>> userTypeList = linkAccessLogsMapper
+        List<HashMap<String, Object>> userTypeList = linkAccessLogsMapper
                 .selectUvTypeByUsers(gid, fullShortUrl, requestParam.getStartDate(), requestParam.getEndDate(), userSetList);
         actualResult.getRecords().forEach(item -> {
             HashMap<String, Object> uvTypeMap = userTypeList.stream()
@@ -218,7 +219,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         //24小时访问数据统计
         List<Integer> hourStats = new ArrayList<>();
         List<LinkAccessStatsDO> listHourStatsByGroup = linkAccessStatsMapper.listHourStatsByGroup(requestParam);
-        for(int i = 0 ; i < 24 ; i ++) {
+        for (int i = 0; i < 24; i++) {
             AtomicInteger hour = new AtomicInteger(i);
             Integer hourCnt = listHourStatsByGroup.stream()
                     .filter(each -> Objects.equals(each.getHour(), hour.get()))
@@ -235,7 +236,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         //一周分布访问详情
         List<LinkAccessStatsDO> listWeekdayStatsByGroup = linkAccessStatsMapper.listWeekdayStatsByGroup(requestParam);
         ArrayList<Integer> weekdayStats = new ArrayList<>();
-        for(int i = 0 ; i < 7 ; i ++) {
+        for (int i = 0; i < 7; i++) {
             AtomicInteger weekday = new AtomicInteger(i);
             Integer weekdayCnt = listWeekdayStatsByGroup.stream()
                     .filter(each -> Objects.equals(each.getWeekday(), weekday.get()))
@@ -264,7 +265,7 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
         });
 
         //访问网络详情
-        List<HashMap<String,Object>> listNetworkStatsByGroup = linkNetworkStatsMapper.listNetworkStatsByGroup(requestParam);
+        List<HashMap<String, Object>> listNetworkStatsByGroup = linkNetworkStatsMapper.listNetworkStatsByGroup(requestParam);
         List<ShortLinkStatsNetworkRespDTO> networkStats = BeanUtil.copyToList(listNetworkStatsByGroup, ShortLinkStatsNetworkRespDTO.class);
         int networkSunCnt = networkStats.stream().mapToInt(ShortLinkStatsNetworkRespDTO::getCnt).sum();
         networkStats.forEach(item -> {
@@ -294,5 +295,38 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
                 .networkStats(networkStats)
                 .deviceStats(deviceStats)
                 .build();
+    }
+
+    @Override
+    public IPage<ShortLinkStatsAccessRecordRespDTO> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam) {
+        String gid = requestParam.getGid();
+        LambdaQueryWrapper<LinkAccessLogsDO> queryWrapper = Wrappers.lambdaQuery(LinkAccessLogsDO.class)
+                .eq(LinkAccessLogsDO::getGid, gid)
+                .between(LinkAccessLogsDO::getCreateTime, requestParam.getStartDate(), requestParam.getEndDate())
+                .eq(LinkAccessLogsDO::getDelFlag, 0)
+                .orderByDesc(LinkAccessLogsDO::getCreateTime);
+        IPage<LinkAccessLogsDO> linkAccessLogsDOIPage = linkAccessLogsMapper.selectPage(requestParam, queryWrapper);
+        IPage<ShortLinkStatsAccessRecordRespDTO> actualResult = linkAccessLogsDOIPage.convert(each -> BeanUtil.toBean(each, ShortLinkStatsAccessRecordRespDTO.class));
+
+        Set<String> userSet = actualResult.getRecords().stream()
+                .map(ShortLinkStatsAccessRecordRespDTO::getUser)
+                .collect(Collectors.toSet());
+        List<String> userSetList = userSet.stream().toList();
+        if (CollectionUtil.isEmpty(userSetList)) {
+            return actualResult;
+        }
+        List<HashMap<String, Object>> userTypeList = linkAccessLogsMapper
+                .selectGroupUvTypeByUsers(gid, requestParam.getStartDate(), requestParam.getEndDate(), userSetList);
+        actualResult.getRecords().forEach(item -> {
+            HashMap<String, Object> uvTypeMap = userTypeList.stream()
+                    .filter(each -> Objects.equals(each.get("user"), item.getUser()))
+                    .findFirst()
+                    .orElse(null);
+            if (uvTypeMap != null) {
+                String uvType = uvTypeMap.get("uvType").toString();
+                item.setUvType(uvType);
+            }
+        });
+        return actualResult;
     }
 }

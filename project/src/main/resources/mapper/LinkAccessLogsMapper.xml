@@ -21,37 +21,46 @@
         user
     </select>
 
+    <!--根据分组用户查询Uv类型（新老访客）-->
+    <select id="selectGroupUvTypeByUsers" resultType="java.util.HashMap">
+        SELECT
+        user,
+        IF(MIN(create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
+        FROM
+        t_link_access_logs
+        WHERE
+        gid = #{gid}
+        AND user IN
+        <foreach item="user" index="index" collection="userSetList" open="(" separator="," close=")">
+            #{user}
+        </foreach>
+        GROUP BY
+        user
+    </select>
+
     <!--根据日志表查询PvUvUip数据-->
     <select id="findPvUvUipStatsByShortLink"
             resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
-            SELECT
-            	full_short_url,
-            	gid,
-            	count( USER ) AS pv,
-            	count( DISTINCT USER ) AS uv,
-            	count( DISTINCT ip ) AS uip
-            FROM
-            	t_link_access_logs
-            WHERE
-            	gid = #{bean.gid}
-            	AND full_short_url = #{bean.fullShortUrl}
-                AND create_time BETWEEN #{bean.startDate} and #{bean.endDate}
-            GROUP BY
-                full_short_url, gid;
+        SELECT full_short_url,
+               gid,
+               count(USER)          AS pv,
+               count(DISTINCT USER) AS uv,
+               count(DISTINCT ip)   AS uip
+        FROM t_link_access_logs
+        WHERE gid = #{bean.gid}
+          AND full_short_url = #{bean.fullShortUrl}
+          AND create_time BETWEEN #{bean.startDate} and #{bean.endDate}
+        GROUP BY full_short_url, gid;
     </select>
 
     <!--根据分组获取指定日期内新老用户访客数据-->
     <select id="findPvUvUipStatsByGroup" resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
-        SELECT
-            gid,
-            count( USER ) AS pv,
-            count( DISTINCT USER ) AS uv,
-            count( DISTINCT ip ) AS uip
-        FROM
-            t_link_access_logs
-        WHERE
-            gid = #{bean.gid}
-        GROUP BY
-            gid;
+        SELECT gid,
+               count(USER)          AS pv,
+               count(DISTINCT USER) AS uv,
+               count(DISTINCT ip)   AS uip
+        FROM t_link_access_logs
+        WHERE gid = #{bean.gid}
+        GROUP BY gid;
     </select>
 </mapper>

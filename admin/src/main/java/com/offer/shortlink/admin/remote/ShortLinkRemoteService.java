@@ -171,4 +171,19 @@ public interface ShortLinkRemoteService {
         return JSON.parseObject(resultBodyStr, new TypeReference<>() {
         });
     }
+
+    /**
+     * 获取分组短链接访问记录数据
+     *
+     * @param requestParam 获取分组短链接访问记录数据请求对象
+     * @return 分页结果
+     */
+    default Result<IPage<ShortLinkStatsAccessRecordRespDTO>> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam) {
+        Map<String, Object> paramMap = BeanUtil.beanToMap(requestParam, false, true);
+        paramMap.remove("orders");
+        paramMap.remove("records");
+        String resultBodyStr = HttpUtil.get(SHORT_LINK_PROJECT + "/api/short-link/v1/stats/access-record/group", paramMap);
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
+    }
 }
