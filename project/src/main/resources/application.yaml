@@ -25,6 +25,8 @@ mybatis-plus:
       id-type: auto
 
 short-link:
+  domain:
+    default: nurl.ink:8001
   stats:
     locale:
       amap-key: 1e0b68eae2562f29713adbaa46ec10ad
