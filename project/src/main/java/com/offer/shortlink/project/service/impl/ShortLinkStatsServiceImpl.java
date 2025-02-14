@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.offer.shortlink.project.dao.entity.LinkAccessLogsDO;
 import com.offer.shortlink.project.dao.entity.LinkAccessStatsDO;
 import com.offer.shortlink.project.dao.mapper.*;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import com.offer.shortlink.project.dto.resp.*;
@@ -192,5 +193,106 @@ public class ShortLinkStatsServiceImpl implements ShortLinkStatsService {
             }
         });
         return actualResult;
+    }
+
+    @Override
+    public ShortLinkStatsRespDTO groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam) {
+
+        //基础访问数据 每日的 pv、uv、uip
+        List<LinkAccessStatsDO> linkStatsByShortLink = linkAccessStatsMapper.linkStatsByGroup(requestParam);
+        if (CollUtil.isEmpty(linkStatsByShortLink)) {
+            return null;
+        }
+
+        //基础访问数据 总的pv、uv、uip
+        LinkAccessStatsDO findPvUvUipStatsByGroup = linkAccessLogsMapper.findPvUvUipStatsByGroup(requestParam);
+
+        //访问地区数据(仅国内) top10
+        List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByGroup = linkLocaleStatsMapper.listLocaleTop10ByGroup(requestParam);
+        int localeCntSum = listLocaleTop10ByGroup.stream().mapToInt(ShortLinkStatsLocaleCNTop10RespDTO::getCnt).sum();
+        listLocaleTop10ByGroup.forEach(item -> {
+            double ratio = ((double) item.getCnt() / localeCntSum);
+            item.setRatio(Math.round(ratio * 100) / 100.0);
+        });
+
+        //24小时访问数据统计
+        List<Integer> hourStats = new ArrayList<>();
+        List<LinkAccessStatsDO> listHourStatsByGroup = linkAccessStatsMapper.listHourStatsByGroup(requestParam);
+        for(int i = 0 ; i < 24 ; i ++) {
+            AtomicInteger hour = new AtomicInteger(i);
+            Integer hourCnt = listHourStatsByGroup.stream()
+                    .filter(each -> Objects.equals(each.getHour(), hour.get()))
+                    .findFirst()
+                    .map(LinkAccessStatsDO::getPv)
+                    .orElse(0);
+            hourStats.add(hourCnt);
+        }
+
+        //高频IP数据统计（频率最高的前五ip）
+        List<HashMap<String, Object>> listTop5IpByShortLinkMap = linkAccessLogsMapper.listTop5IpByGroup(requestParam);
+        List<ShortLinkStatsTopIpRespDTO> listTop5IpByShortLink = BeanUtil.copyToList(listTop5IpByShortLinkMap, ShortLinkStatsTopIpRespDTO.class);
+
+        //一周分布访问详情
+        List<LinkAccessStatsDO> listWeekdayStatsByGroup = linkAccessStatsMapper.listWeekdayStatsByGroup(requestParam);
+        ArrayList<Integer> weekdayStats = new ArrayList<>();
+        for(int i = 0 ; i < 7 ; i ++) {
+            AtomicInteger weekday = new AtomicInteger(i);
+            Integer weekdayCnt = listWeekdayStatsByGroup.stream()
+                    .filter(each -> Objects.equals(each.getWeekday(), weekday.get()))
+                    .findFirst()
+                    .map(LinkAccessStatsDO::getPv)
+                    .orElse(0);
+            weekdayStats.add(weekdayCnt);
+        }
+
+        //操作系统访问详情
+        List<HashMap<String, Object>> listOsStatsByGroup = linkOsStatsMapper.listOsStatsByGroup(requestParam);
+        List<ShortLinkStatsOsRespDTO> osStats = BeanUtil.copyToList(listOsStatsByGroup, ShortLinkStatsOsRespDTO.class);
+        int osSumCnt = osStats.stream().mapToInt(ShortLinkStatsOsRespDTO::getCnt).sum();
+        osStats.forEach(item -> {
+            double ratio = ((double) item.getCnt() / osSumCnt);
+            item.setRatio(Math.round(ratio * 100) / 100.0);
+        });
+
+        //浏览器访问详情
+        List<HashMap<String, Object>> listBrowserStatsByGroup = linkBrowserStatsMapper.listBrowserStatsByGroup(requestParam);
+        List<ShortLinkStatsBrowserRespDTO> browserStats = BeanUtil.copyToList(listBrowserStatsByGroup, ShortLinkStatsBrowserRespDTO.class);
+        int browserSumCnt = browserStats.stream().mapToInt(ShortLinkStatsBrowserRespDTO::getCnt).sum();
+        browserStats.forEach(item -> {
+            double ratio = ((double) item.getCnt() / browserSumCnt);
+            item.setRatio(Math.round(ratio * 100) / 100.0);
+        });
+
+        //访问网络详情
+        List<HashMap<String,Object>> listNetworkStatsByGroup = linkNetworkStatsMapper.listNetworkStatsByGroup(requestParam);
+        List<ShortLinkStatsNetworkRespDTO> networkStats = BeanUtil.copyToList(listNetworkStatsByGroup, ShortLinkStatsNetworkRespDTO.class);
+        int networkSunCnt = networkStats.stream().mapToInt(ShortLinkStatsNetworkRespDTO::getCnt).sum();
+        networkStats.forEach(item -> {
+            double ratio = ((double) item.getCnt() / networkSunCnt);
+            item.setRatio(Math.round(ratio * 100) / 100.0);
+        });
+
+        //访问设备详情
+        List<HashMap<String, Object>> listDeviceStatsByGroup = linkDeviceStatsMapper.listDeviceStatsByGroup(requestParam);
+        List<ShortLinkStatsDeviceRespDTO> deviceStats = BeanUtil.copyToList(listDeviceStatsByGroup, ShortLinkStatsDeviceRespDTO.class);
+        int deviceSumCnt = deviceStats.stream().mapToInt(ShortLinkStatsDeviceRespDTO::getCnt).sum();
+        deviceStats.forEach(item -> {
+            double ratio = ((double) item.getCnt() / deviceSumCnt);
+            item.setRatio(Math.round(ratio * 100) / 100.0);
+        });
+        return ShortLinkStatsRespDTO.builder()
+                .pv(findPvUvUipStatsByGroup.getPv())
+                .uv(findPvUvUipStatsByGroup.getUv())
+                .uip(findPvUvUipStatsByGroup.getUip())
+                .daily(BeanUtil.copyToList(linkStatsByShortLink, ShortLinkStatsDailyRespDTO.class))
+                .localeCnStats(listLocaleTop10ByGroup)
+                .hourStats(hourStats)
+                .topIpStats(listTop5IpByShortLink)
+                .weekdayStats(weekdayStats)
+                .osStats(osStats)
+                .browserStats(browserStats)
+                .networkStats(networkStats)
+                .deviceStats(deviceStats)
+                .build();
     }
 }

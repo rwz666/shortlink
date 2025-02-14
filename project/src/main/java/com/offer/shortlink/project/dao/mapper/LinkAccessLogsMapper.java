@@ -3,6 +3,7 @@ package com.offer.shortlink.project.dao.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.offer.shortlink.project.dao.entity.LinkAccessLogsDO;
 import com.offer.shortlink.project.dao.entity.LinkAccessStatsDO;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -71,4 +72,30 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
      * 根据日志表查询PvUvUip数据
      */
     LinkAccessStatsDO findPvUvUipStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 根据分组获取指定日期内新老用户访客数据
+     */
+    LinkAccessStatsDO findPvUvUipStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
+
+    /**
+     * 分组高频IP访问统计（前五）
+     *
+     * @param requestParam 分组高频IP访问统计请求参数
+     */
+    @Select("""
+            SELECT
+            	ip,
+            	count(*) AS cnt
+            FROM
+            	t_link_access_logs
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY
+            	gid,
+            	ip
+            	LIMIT 5;
+            """)
+    List<HashMap<String, Object>> listTop5IpByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

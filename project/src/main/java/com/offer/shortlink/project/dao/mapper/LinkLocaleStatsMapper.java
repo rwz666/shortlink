@@ -2,6 +2,7 @@ package com.offer.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.offer.shortlink.project.dao.entity.LinkLocaleStatsDO;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import com.offer.shortlink.project.dto.resp.ShortLinkStatsLocaleCNTop10RespDTO;
 import org.apache.ibatis.annotations.Insert;
@@ -52,4 +53,25 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
             LIMIT 10;
             """)
     List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 分组访问地区数据前10统计
+     *
+     * @param requestParam 短链接访问地区数据前10统计请求参数
+     * @return 各个省份的数据个数
+     */
+    @Select("""
+            SELECT
+                SUM(cnt) as cnt,
+                province AS locale
+            FROM
+                t_link_locale_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND del_flag = '0'
+            GROUP BY gid, province
+            LIMIT 10;
+            """)
+    List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

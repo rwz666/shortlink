@@ -3,6 +3,7 @@ package com.offer.shortlink.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.offer.shortlink.admin.common.convention.result.Result;
 import com.offer.shortlink.admin.remote.ShortLinkRemoteService;
+import com.offer.shortlink.admin.remote.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.admin.remote.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import com.offer.shortlink.admin.remote.dto.req.ShortLinkStatsReqDTO;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkStatsAccessRecordRespDTO;
@@ -32,6 +33,14 @@ public class ShortLinkStatsController {
     @GetMapping("/api/short-link/admin/v1/stats")
     public Result<ShortLinkStatsRespDTO> oneShortLinkStats(ShortLinkStatsReqDTO requestParam) {
         return shortLinkRemoteService.oneShortLinkStats(requestParam);
+    }
+
+    /**
+     * 获取分组短链接监控数据
+     */
+    @GetMapping("/api/short-link/admin/v1/stats/group")
+    public Result<ShortLinkStatsRespDTO> groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam) {
+        return shortLinkRemoteService.groupShortLinkStats(requestParam);
     }
 
     /**

@@ -2,6 +2,7 @@ package com.offer.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.offer.shortlink.project.dao.entity.LinkBrowserStatsDO;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -52,4 +53,23 @@ public interface LinkBrowserStatsMapper extends BaseMapper<LinkBrowserStatsDO> {
              	browser;
             """)
     List<HashMap<String, Object>> listBrowserStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 分组短链接浏览器数据详情
+     * @param requestParam 分组短链接访问基础数据实体
+     */
+    @Select("""
+            SELECT
+            	browser,
+             	sum(cnt) as cnt
+            FROM
+            	t_link_browser_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY
+            	gid,
+             	browser;
+            """)
+    List<HashMap<String, Object>> listBrowserStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

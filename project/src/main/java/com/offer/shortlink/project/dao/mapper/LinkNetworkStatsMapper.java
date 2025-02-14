@@ -2,6 +2,7 @@ package com.offer.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.offer.shortlink.project.dao.entity.LinkNetworkStatsDO;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -51,4 +52,22 @@ public interface LinkNetworkStatsMapper extends BaseMapper<LinkNetworkStatsDO> {
             	network
             """)
     List<HashMap<String, Object>> listNetworkStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 分组访问网络详情
+     */
+    @Select("""
+            SELECT
+            	network,
+            	sum(cnt) as cnt
+            FROM
+            	t_link_network_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY
+            	gid,
+            	network
+            """)
+    List<HashMap<String, Object>> listNetworkStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

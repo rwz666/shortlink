@@ -2,6 +2,7 @@ package com.offer.shortlink.project.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.offer.shortlink.project.dao.entity.LinkAccessStatsDO;
+import com.offer.shortlink.project.dto.req.ShortLinkGroupStatsReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkStatsReqDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -97,4 +98,67 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
             	weekday;
             """)
     List<LinkAccessStatsDO> listWeekdayStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 分组小时访问详情
+     *
+     * @param requestParam 分组小时访问详情请求对象
+     * @return 分组小时访问详情返回
+     */
+    @Select("""
+            SELECT
+            	sum(pv) AS pv,
+            	`hour`
+            FROM
+            	t_link_access_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY
+            	gid,
+            	`hour`;
+            """)
+    List<LinkAccessStatsDO> listHourStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
+
+    /**
+     * 分组每周访问详情
+     *
+     * @param requestParam 分组短链接请求参数
+     * @return 分组短链接基础对象
+     */
+    @Select("""
+            SELECT
+            	weekday,
+            	sum(pv) AS pv
+            FROM
+            	t_link_access_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY
+            	gid,
+            	weekday;
+            """)
+    List<LinkAccessStatsDO> listWeekdayStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
+
+    /**
+     * 分组基础访问详情
+     *
+     * @param requestParam 分组基础访问详情请求参数
+     * @return 分组基础访问详情
+     */
+    @Select("""
+            SELECT
+                `date`,
+                SUM(pv) AS pv,
+                SUM(uv) AS uv,
+                SUM(uip) AS uip
+            FROM
+                t_link_access_stats
+            WHERE
+                gid = #{bean.gid}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            GROUP BY full_short_url, gid, `date`;
+            """)
+    List<LinkAccessStatsDO> linkStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }
