@@ -155,7 +155,7 @@ public interface ShortLinkRemoteService {
         Map<String, Object> paramMap = BeanUtil.beanToMap(requestParam, false, true);
         paramMap.remove("orders");
         paramMap.remove("records");
-        String resultBodyStr = HttpUtil.get(SHORT_LINK_PROJECT + "/api/short-link/v1/access-record", paramMap);
+        String resultBodyStr = HttpUtil.get(SHORT_LINK_PROJECT + "/api/short-link/v1/stats/access-record", paramMap);
         return JSON.parseObject(resultBodyStr, new TypeReference<>() {
         });
     }

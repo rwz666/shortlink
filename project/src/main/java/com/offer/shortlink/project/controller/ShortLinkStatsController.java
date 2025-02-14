@@ -43,7 +43,7 @@ public class ShortLinkStatsController {
     /**
      * 获取单个短链接访问记录数据
      */
-    @GetMapping("/api/short-link/v1/access-record")
+    @GetMapping("/api/short-link/v1/stats/access-record")
     public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> shortLinkStatsAccessRecord(ShortLinkStatsAccessRecordReqDTO requestParam) {
         return Results.success(shortLinkStatsService.shortLinkStatsAccessRecord(requestParam));
     }
