@@ -39,6 +39,18 @@ public interface ShortLinkRemoteService {
     }
 
     /**
+     * 批量创建短链接
+     *
+     * @param requestParam 批量创建短链接请求参数
+     * @return 批量短链接创建返回对象
+     */
+    default Result<ShortLinkBatchCreateRespDTO> batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam) {
+        String resultBodyStr = HttpUtil.post(SHORT_LINK_PROJECT + "/api/short-link/v1/create/batch", JSON.toJSONString(requestParam));
+        return JSON.parseObject(resultBodyStr, new TypeReference<>() {
+        });
+    }
+
+    /**
      * 分页查询短链接
      *
      * @param requestParam 分页查询短链接请求参数
