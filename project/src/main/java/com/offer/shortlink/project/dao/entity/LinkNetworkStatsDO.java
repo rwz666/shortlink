@@ -3,6 +3,7 @@ package com.offer.shortlink.project.dao.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.offer.shortlink.project.common.database.BaseDO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("t_link_network_stats")
-public class LinkNetworkStatsDO {
+public class LinkNetworkStatsDO extends BaseDO {
 
     @TableId(type = IdType.AUTO)
     /**

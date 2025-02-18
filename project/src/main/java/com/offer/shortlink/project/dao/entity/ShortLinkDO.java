@@ -107,6 +107,11 @@ public class ShortLinkDO extends BaseDO {
     private Integer totalUip;
 
     /**
+     * 删除时间戳
+     */
+    private Long delTime;
+
+    /**
      * 今日PV
      */
     @TableField(exist = false)
