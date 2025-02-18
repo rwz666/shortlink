@@ -1,6 +1,7 @@
 package com.offer.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -27,6 +28,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.offer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_USER_REGISTER_KEY;
@@ -108,13 +110,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO == null) {
             throw new ClientException("用户不存在");
         }
-        String key = "login_" + requestParam.getUsername();
-
-        Boolean hasLogin = stringRedisTemplate.hasKey(key);
-        if (hasLogin != null && hasLogin) {
-            throw new ClientException("用户已登录");
+        Map<Object, Object> hasLoginMap = stringRedisTemplate.opsForHash().entries("login_" + requestParam.getUsername());
+        if (CollUtil.isNotEmpty(hasLoginMap)) {
+            String token = hasLoginMap.keySet().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElseThrow(() -> new ClientException("用户登陆错误"));
+            return new UserLoginRespDTO(token);
         }
-        String uuid = UUID.randomUUID().toString();
+
 //        stringRedisTemplate.opsForValue().set(uuid, JSON.toJSONString(userDO), 30L, TimeUnit.MINUTES);
         /**
          * Hash
@@ -123,7 +127,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
          *   Key: "token"
          *   Val: JSON字符串 （用户信息）
          */
-
+        String key = "login_" + requestParam.getUsername();
+        String uuid = UUID.randomUUID().toString();
         stringRedisTemplate.opsForHash().put(key, uuid, JSON.toJSONString(userDO));
         stringRedisTemplate.expire(key, 30L, TimeUnit.DAYS);
         return new UserLoginRespDTO(uuid);
