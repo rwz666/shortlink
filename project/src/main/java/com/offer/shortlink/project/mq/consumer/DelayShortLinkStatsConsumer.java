@@ -54,7 +54,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-//        onMessage();
+        onMessage();
     }
 
 }
