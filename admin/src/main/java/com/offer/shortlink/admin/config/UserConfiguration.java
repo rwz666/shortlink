@@ -1,5 +1,6 @@
 package com.offer.shortlink.admin.config;
 
+import com.offer.shortlink.admin.common.biz.user.UserFlowRiskControlFilter;
 import com.offer.shortlink.admin.common.biz.user.UserTransmitFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -23,5 +24,20 @@ public class UserConfiguration {
         registration.addUrlPatterns("/*");
         registration.setOrder(0);
         return registration;
+    }
+
+    /**
+     * 用户操作流量封控过滤器
+     */
+    @Bean
+    public FilterRegistrationBean<UserFlowRiskControlFilter> globalUserFlowRiskControlFilter(
+            StringRedisTemplate stringRedisTemplate,
+            UserFlowRiskControlConfiguration userFlowRiskControlConfiguration
+            ) {
+        FilterRegistrationBean<UserFlowRiskControlFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new UserFlowRiskControlFilter(stringRedisTemplate, userFlowRiskControlConfiguration));
+        registrationBean.addUrlPatterns("/*");
+        registrationBean.setOrder(10);
+        return registrationBean;
     }
 }
