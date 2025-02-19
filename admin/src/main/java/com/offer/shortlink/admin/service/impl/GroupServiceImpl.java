@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.offer.shortlink.admin.common.biz.user.UserContext;
+import com.offer.shortlink.admin.common.convention.exception.ClientException;
 import com.offer.shortlink.admin.common.convention.exception.ServiceException;
 import com.offer.shortlink.admin.common.convention.result.Result;
 import com.offer.shortlink.admin.dao.entity.GroupDO;
@@ -16,12 +17,18 @@ import com.offer.shortlink.admin.remote.ShortLinkRemoteService;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.offer.shortlink.admin.service.GroupService;
 import com.offer.shortlink.admin.toolkit.RandomStringUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static com.offer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_CREATE_KEY;
 
 /**
  * @author rwz
@@ -30,6 +37,7 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
     /**
@@ -38,6 +46,11 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
     };
 
+    private final RedissonClient redissonClient;
+
+    @Value("${short-link.group.max-num}")
+    private Integer groupMaxNum;
+
     @Override
     public void saveGroup(String groupName) {
         saveGroup(UserContext.getUsername(), groupName);
@@ -45,21 +58,34 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
     @Override
     public void saveGroup(String username, String groupName) {
-        // TODO：优化查询逻辑，分片键是username
-        String gid;
-        do {
-            gid = RandomStringUtil.generateRandom();
-        } while (hasGId(username, gid));
-        GroupDO groupDO = GroupDO.builder()
-                .gid(gid)
-                .username(username)
-                .name(groupName)
-                .sortOrder(0)
-                .build();
-        int inserted = baseMapper.insert(groupDO);
-        if (inserted < 1) {
-            throw new ServiceException("数据库插入失败");
+        RLock lock = redissonClient.getLock(LOCK_GROUP_CREATE_KEY);
+        lock.lock();
+        try {
+            LambdaQueryWrapper<GroupDO> queryWrapper = Wrappers.lambdaQuery(GroupDO.class)
+                    .eq(GroupDO::getUsername, username)
+                    .eq(GroupDO::getDelFlag, 0);
+            Long groupDOCount = baseMapper.selectCount(queryWrapper);
+            if (groupDOCount.intValue() == groupMaxNum) {
+                throw new ClientException(String.format("已超出最大分组数：%d", groupMaxNum));
+            }
+            String gid;
+            do {
+                gid = RandomStringUtil.generateRandom();
+            } while (hasGId(username, gid));
+            GroupDO groupDO = GroupDO.builder()
+                    .gid(gid)
+                    .username(username)
+                    .name(groupName)
+                    .sortOrder(0)
+                    .build();
+            int inserted = baseMapper.insert(groupDO);
+            if (inserted < 1) {
+                throw new ServiceException("数据库插入失败");
+            }
+        }finally {
+            lock.unlock();
         }
+
     }
 
     @Override
