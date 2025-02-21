@@ -14,6 +14,8 @@ import com.offer.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import com.offer.shortlink.project.mq.producer.DelayShortLinkStatsProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
+import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
@@ -37,7 +39,11 @@ import static com.offer.shortlink.project.common.constant.ShortLinkConstant.AMAP
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRecord<String, String, String>> {
+@RocketMQMessageListener(
+        topic = "${rocketmq.producer.topic}",
+        consumerGroup = "${rocketmq.consumer.group}"
+)
+public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRecord<String, String, String>>, RocketMQListener<Map<String, String>> {
 
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
@@ -56,9 +62,6 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
     @Value("${short-link.stats.locale.amap-key}")
     private String statsLocaleAmapApiKey;  // 高德地图 API Key
 
-    @Value("${spring.data.redis.channel-topic.short-link-stats}")
-    private String topic;
-
     @Override
     public void onMessage(MapRecord<String, String, String> message) {
         String stream = message.getStream();
@@ -71,6 +74,23 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
             actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
         }
         stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());
+    }
+
+
+    @Override
+    public void onMessage(Map<String, String> producerMap) {
+        String keys = producerMap.get("keys");
+        try {
+            String fullShortUrl = producerMap.get("fullShortUrl");
+            if (StrUtil.isNotBlank(fullShortUrl)) {
+                String gid = producerMap.get("gid");
+                ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
+                actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
+            }
+        } catch (Throwable e) {
+            log.error("记录短链接监控消费异常", e);
+            throw e;
+        }
     }
 
 

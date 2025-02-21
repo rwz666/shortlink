@@ -19,6 +19,9 @@ spring:
     view:
       prefix: /templates/
       suffix: .html
+message-queue:
+  select: mq # 消息队列的实现方式 redis / mq
+
 mybatis-plus:
   global-config:
     db-config:
@@ -43,3 +46,14 @@ short-link:
   stats:
     locale:
       amap-key: 1e0b68eae2562f29713adbaa46ec10ad
+
+rocketmq:
+  name-server: 192.168.127.100:9876 # 访问地址   http://common-rocketmq-dev.magestack.cn:8088/  192.168.127.100
+  producer:
+    group: short-link_project-service_stats-save_pg_rwz # 必须指定group
+    topic: short-link_project-service_topic_rwz
+    send-message-timeout: 2000 # 消息发送超时时长，默认3s
+    retry-times-when-send-failed: 1 # 同步发送消息失败重试次数，默认2
+    retry-times-when-send-async-failed: 1 # 异步发送消息失败重试次数，默认2
+  consumer:
+    group: short-link_project-service_stats-save_cg_rwz
