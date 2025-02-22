@@ -429,7 +429,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             Cookie uvCookie = new Cookie("uv", uv.get());
             uvCookie.setMaxAge(60 * 60 * 24 * 30);//有效期一个月
             uvCookie.setPath(StrUtil.sub(fullShortUrl, fullShortUrl.indexOf("/"), fullShortUrl.length()));
-            stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, uv.get());
+            stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, uv.get());
             uvFirstFlag.set(Boolean.TRUE);
             response.addCookie(uvCookie);
         };
@@ -441,7 +441,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .ifPresentOrElse(item -> {
                         //如果存在uv的cookie，说明不是该用户第一次请求短链接
                         uv.set(item);
-                        Long uvAdd = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, item);
+                        Long uvAdd = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UV_KEY + fullShortUrl, item);
                         uvFirstFlag.set(uvAdd != null && uvAdd > 0L);
                     }, addResponseCookieTask);
         } else {
@@ -452,7 +452,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         String browser = LinkUtil.getBrowserName(request);
         String device = LinkUtil.getDevice(request);
         String network = LinkUtil.getNetwork(request);
-        Long uipAdd = stringRedisTemplate.opsForSet().add("short-link:stats:uip:" + fullShortUrl, remoteAddr);
+        Long uipAdd = stringRedisTemplate.opsForSet().add(SHORT_LINK_STATS_UIP_KEY + fullShortUrl, remoteAddr);
         boolean uipFirstFlag = uipAdd != null && uipAdd > 0L;
         return ShortLinkStatsRecordDTO.builder()
                 .fullShortUrl(fullShortUrl)
