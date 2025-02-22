@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+import static com.offer.shortlink.project.common.constant.RedisKeyConstant.SHORT_LINK_STATS_STREAM_TOPIC_KEY;
+
 /**
  * @author rwz
  * @since 2025/2/20
@@ -28,9 +30,6 @@ public class ShortLinkStatsSaveProducer {
     private final StringRedisTemplate stringRedisTemplate;
 
     private final RocketMQTemplate rocketMQTemplate;
-
-    @Value("${spring.data.redis.channel-topic.short-link-stats}")
-    private String statsRedisStreamTopic;
 
     @Value("${rocketmq.producer.topic}")
     private String statsRocketMQTopic;
@@ -54,7 +53,7 @@ public class ShortLinkStatsSaveProducer {
     }
 
     private void sendByRedis(Map<String, String> producerMap) {
-        stringRedisTemplate.opsForStream().add(statsRedisStreamTopic, producerMap);
+        stringRedisTemplate.opsForStream().add(SHORT_LINK_STATS_STREAM_TOPIC_KEY, producerMap);
     }
 
     private void sendByRocketMQ(Map<String, String> producerMap) {
