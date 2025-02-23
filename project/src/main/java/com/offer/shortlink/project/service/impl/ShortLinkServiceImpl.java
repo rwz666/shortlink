@@ -107,6 +107,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .shortUri(shortLinkSuffix)
                 .fullShortUrl(fullShortUrl)
                 .enableStatus(0)
+                .delTime(0L)
                 .totalPv(0)
                 .totalUv(0)
                 .totalUip(0)
