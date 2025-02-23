@@ -2,6 +2,8 @@ server:
   port: 8001
 
 spring:
+  application:
+    name: short-link-project
   datasource:
     # ShardingSphere 对 Driver 自定义，实现分库分表等隐藏逻辑
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
@@ -16,8 +18,13 @@ spring:
     view:
       prefix: /templates/
       suffix: .html
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.127.100:8848
 message-queue:
   select: mq # 消息队列的实现方式 redis / mq
+
 
 mybatis-plus:
   global-config:
@@ -32,7 +39,7 @@ short-link:
     default: nurl.ink:8001
   goto-domain:
     white-list:
-      enable: true
+      enable: false
       names: '拿个offer,知乎,掘金,博客园'
       details:
         - nageoffer.com

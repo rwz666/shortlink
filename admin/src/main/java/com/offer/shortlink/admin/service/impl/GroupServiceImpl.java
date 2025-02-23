@@ -13,7 +13,7 @@ import com.offer.shortlink.admin.dao.mapper.GroupMapper;
 import com.offer.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import com.offer.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import com.offer.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
-import com.offer.shortlink.admin.remote.ShortLinkRemoteService;
+import com.offer.shortlink.admin.remote.ShortLinkRemoteClient;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.offer.shortlink.admin.service.GroupService;
 import com.offer.shortlink.admin.toolkit.RandomStringUtil;
@@ -40,11 +40,7 @@ import static com.offer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_
 @RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
 
-    /**
-     * 后续重构为SpringCloud Feign调用
-     */
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
-    };
+    private final ShortLinkRemoteClient shortLinkRemoteClient;
 
     private final RedissonClient redissonClient;
 
@@ -97,7 +93,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .orderByDesc(GroupDO::getSortOrder)
                 .orderByDesc(GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteService
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkRemoteClient
                 .listShortLinkGroupCount(groupDOList.stream().map(GroupDO::getGid).toList());
         List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
         shortLinkGroupRespDTOList.forEach(each -> {

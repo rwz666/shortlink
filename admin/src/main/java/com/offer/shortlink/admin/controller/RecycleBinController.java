@@ -1,9 +1,9 @@
 package com.offer.shortlink.admin.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.offer.shortlink.admin.common.convention.result.Result;
 import com.offer.shortlink.admin.common.convention.result.Results;
-import com.offer.shortlink.admin.remote.ShortLinkRemoteService;
+import com.offer.shortlink.admin.remote.ShortLinkRemoteClient;
 import com.offer.shortlink.admin.remote.dto.req.RecycleBinRecoverReqDTO;
 import com.offer.shortlink.admin.remote.dto.req.RecycleBinRemoveReqDTO;
 import com.offer.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
@@ -25,11 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RecycleBinController {
 
-    /**
-     * 后续重构为SpringCloud Feign调用
-     */
-    ShortLinkRemoteService shortLinkRemoteService = new ShortLinkRemoteService() {
-    };
+    private final ShortLinkRemoteClient shortLinkRemoteClient;
 
     private final ShortLinkRecycleBinService shortLinkRecycleBinService;
 
@@ -38,7 +34,7 @@ public class RecycleBinController {
      */
     @PostMapping("/api/short-link/admin/v1/recycle-bin/save")
     public Result<Void> saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam){
-        shortLinkRemoteService.saveRecycleBin(requestParam);
+        shortLinkRemoteClient.saveRecycleBin(requestParam);
         return Results.success();
     }
 
@@ -46,7 +42,7 @@ public class RecycleBinController {
      * 分页查询回收站短链接
      */
     @GetMapping("/api/short-link/admin/v1/recycle-bin/page")
-    public Result<IPage<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam){
+    public Result<Page<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam){
         return shortLinkRecycleBinService.pageRecycleBinShortLink(requestParam);
     }
 
@@ -55,7 +51,7 @@ public class RecycleBinController {
      */
     @PostMapping("/api/short-link/admin/v1/recycle-bin/recover")
     public Result<Void> recoverRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam){
-        shortLinkRemoteService.recoverRecycleBin(requestParam);
+        shortLinkRemoteClient.recoverRecycleBin(requestParam);
         return Results.success();
     }
 
@@ -64,7 +60,7 @@ public class RecycleBinController {
      */
     @PostMapping("/api/short-link/admin/v1/recycle-bin/remove")
     public Result<Void> removeRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam){
-        shortLinkRemoteService.removeRecycleBin(requestParam);
+        shortLinkRemoteClient.removeRecycleBin(requestParam);
         return Results.success();
     }
 }
