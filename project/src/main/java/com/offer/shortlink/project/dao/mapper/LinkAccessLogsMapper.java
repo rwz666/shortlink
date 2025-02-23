@@ -52,6 +52,10 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
                 IF(count(distinct date(create_time)) > 1, 1, 0) as old_user,
                 IF(count(distinct date(create_time)) = 1 and max(create_time) >= #{bean.startDate} and max(create_time) <= #{bean.endDate}, 1, 0) as new_user
             from t_link_access_logs
+            WHERE
+                gid = #{bean.gid}
+            AND full_short_url = #{bean.fullShortUrl}
+            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
             group by user
             ) as user_counts;
             """)
