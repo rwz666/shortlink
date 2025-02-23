@@ -58,6 +58,7 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 .in(ShortLinkDO::getGid, requestParam.getGidList())
                 .eq(ShortLinkDO::getEnableStatus, 1)
                 .eq(ShortLinkDO::getDelFlag, 0)
+                .eq(ShortLinkDO::getDelTime, 0L)
                 .orderByDesc(ShortLinkDO::getUpdateTime);
         IPage<ShortLinkDO> resultPage = baseMapper.selectPage(requestParam, queryWrapper);
         return resultPage.convert(item -> {
