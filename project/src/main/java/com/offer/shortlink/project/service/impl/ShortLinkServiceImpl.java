@@ -25,7 +25,6 @@ import com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.offer.shortlink.project.dto.resp.*;
 import com.offer.shortlink.project.mq.producer.ShortLinkStatsSaveProducer;
-import com.offer.shortlink.project.service.LinkStatsTodayService;
 import com.offer.shortlink.project.service.ShortLinkService;
 import com.offer.shortlink.project.toolkit.HashUtil;
 import com.offer.shortlink.project.toolkit.LinkUtil;
@@ -43,6 +42,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -80,9 +80,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkStatsTodayService linkStatsTodayService;
     private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
     private final ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;
-
-    @Value("${short-link.stats.locale.amap-key}")
-    private String statsLocaleAmapApiKey;  // 高德地图 API Key
+    private final ApplicationContext applicationContext;
 
     @Value("${short-link.domain.default}")
     private String shortLinkDefaultDomain;
@@ -148,7 +146,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             shortLinkCreateReqDTO.setOriginUrl(originUrls.get(i));
             shortLinkCreateReqDTO.setDescribe(describes.get(i));
             try {
-                ShortLinkCreateRespDTO shortLinkCreateRespDTO = createShortLink(shortLinkCreateReqDTO);
+                ShortLinkService currentProxy = applicationContext.getBean(ShortLinkService.class);
+                ShortLinkCreateRespDTO shortLinkCreateRespDTO = currentProxy.createShortLink(shortLinkCreateReqDTO);
                 ShortLinkBaseInfoRespDTO resultBean = BeanUtil.toBean(shortLinkCreateRespDTO, ShortLinkBaseInfoRespDTO.class);
                 resultList.add(resultBean);
             } catch (Throwable e) {
