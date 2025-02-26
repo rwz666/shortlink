@@ -23,6 +23,7 @@ import static com.offer.shortlink.project.common.constant.RedisKeyConstant.DELAY
  * @since 2025/2/18
  * 延迟记录短链接统计组件
  */
+@Deprecated
 @Component
 @RequiredArgsConstructor
 public class DelayShortLinkStatsConsumer implements InitializingBean {
@@ -71,7 +72,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        onMessage();
+//        onMessage();
     }
 
 }
