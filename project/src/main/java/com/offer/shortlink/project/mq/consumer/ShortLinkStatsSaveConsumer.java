@@ -13,7 +13,6 @@ import com.offer.shortlink.project.dao.entity.*;
 import com.offer.shortlink.project.dao.mapper.*;
 import com.offer.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import com.offer.shortlink.project.mq.idempotent.MessageQueueIdempotentHandler;
-import com.offer.shortlink.project.mq.producer.DelayShortLinkStatsProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
@@ -58,7 +57,6 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
     private final LinkDeviceStatsMapper linkDeviceStatsMapper;
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
-    private final DelayShortLinkStatsProducer delayShortLinkStatsProducer;
     private final ShortLinkMapper shortLinkMapper;
     private final MessageQueueIdempotentHandler messageQueueIdempotentHandler;
 
@@ -86,7 +84,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
             }
             // 消息消费完成，将其从redis中删除
             stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());
-        }catch (Throwable e) {
+        } catch (Throwable e) {
             messageQueueIdempotentHandler.delMessageProcessed(id.toString());
             log.error("记录短链接监控消费异常", e);
         }
@@ -124,10 +122,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
         RLock rLock = readWriteLock.writeLock();
-        if (!rLock.tryLock()) {
-            delayShortLinkStatsProducer.send(statsRecord);
-            return;
-        }
+        rLock.lock();
         try {
             //gid为null，重新查询数据库获取
             if (StrUtil.isBlank(gid)) {

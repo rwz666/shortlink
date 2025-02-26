@@ -24,7 +24,6 @@ import com.offer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkUpdateReqDTO;
 import com.offer.shortlink.project.dto.resp.*;
-import com.offer.shortlink.project.mq.producer.DelayShortLinkStatsProducer;
 import com.offer.shortlink.project.mq.producer.ShortLinkStatsSaveProducer;
 import com.offer.shortlink.project.service.LinkStatsTodayService;
 import com.offer.shortlink.project.service.ShortLinkService;
@@ -79,7 +78,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkNetworkStatsMapper linkNetworkStatsMapper;
     private final LinkStatsTodayMapper linkStatsTodayMapper;
     private final LinkStatsTodayService linkStatsTodayService;
-    private final DelayShortLinkStatsProducer delayShortLinkStatsProducer;
     private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
     private final ShortLinkStatsSaveProducer shortLinkStatsSaveProducer;
 
@@ -224,9 +222,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             //修改了gid，先删除原来的，再插入
             RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, requestParam.getFullShortUrl()));
             RLock rLock = readWriteLock.writeLock();
-            if (!rLock.tryLock()) {
-                throw new ServiceException("短链接正在被访问，请稍后再试");
-            }
+            rLock.lock();
             try {
                 LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
                         .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())

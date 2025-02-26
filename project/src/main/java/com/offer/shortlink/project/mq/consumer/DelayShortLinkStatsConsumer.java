@@ -30,7 +30,7 @@ public class DelayShortLinkStatsConsumer implements InitializingBean {
     private static final Logger log = LoggerFactory.getLogger(DelayShortLinkStatsConsumer.class);
     private final RedissonClient redissonClient;
     private final ShortLinkService shortLinkService;
-    private MessageQueueIdempotentHandler messageQueueIdempotentHandler;
+    private final MessageQueueIdempotentHandler messageQueueIdempotentHandler;
 
     public void onMessage() {
         ExecutorService executorService = Executors.newSingleThreadExecutor(runnable -> {
