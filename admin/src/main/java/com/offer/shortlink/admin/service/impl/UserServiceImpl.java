@@ -71,26 +71,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             throw new ClientException(UserErrorCodeEnum.USER_NAME_EXIST);
         }
         RLock lock = redissonClient.getLock(LOCK_USER_REGISTER_KEY + requestParam.getUsername());
-        try {
-            if (lock.tryLock()) {
-                try {
-                    int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));
-                    if (inserted < 1) {
-                        throw new ClientException(UserErrorCodeEnum.USER_SAVE_ERROR);
-                    }
-                    userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
-                    groupService.saveGroup(requestParam.getUsername(), "默认分组");
-                }catch (DuplicateKeyException e) {
-                    throw new ClientException(UserErrorCodeEnum.USER_SAVE_ERROR);
-                }
-                return;
-            }
+        if (!lock.tryLock()) {
             throw new ClientException(UserErrorCodeEnum.USER_NAME_EXIST);
+        }
+        try {
+            int inserted = baseMapper.insert(BeanUtil.toBean(requestParam, UserDO.class));
+            if (inserted < 1) {
+                throw new ClientException(UserErrorCodeEnum.USER_SAVE_ERROR);
+            }
+            userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
+            groupService.saveGroup(requestParam.getUsername(), "默认分组");
+        } catch (DuplicateKeyException e) {
+            throw new ClientException(UserErrorCodeEnum.USER_SAVE_ERROR);
         } finally {
             lock.unlock();
         }
-
-
     }
 
     @Override
