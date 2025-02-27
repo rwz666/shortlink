@@ -23,9 +23,9 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      * @param linkAccessStatsDO 短链接访问基础数据实体
      */
     @Insert("""
-            INSERT INTO t_link_access_stats ( full_short_url, gid, date, pv, uv, uip, HOUR, weekday, create_time, update_time, del_flag )
+            INSERT INTO t_link_access_stats (full_short_url, date, pv, uv, uip, HOUR, weekday, create_time, update_time, del_flag)
                 VALUES
-                    (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.pv}, #{bean.uv}, #{bean.uip}, #{bean.hour}, #{bean.weekday}, NOW(), NOW(),0)
+                    (#{bean.fullShortUrl}, #{bean.date}, #{bean.pv}, #{bean.uv}, #{bean.uip}, #{bean.hour}, #{bean.weekday}, NOW(), NOW(),0)
                 ON DUPLICATE KEY UPDATE
                     pv = pv + #{bean.pv}, uv = uv + #{bean.uv}, uip = uip + #{bean.uip}, update_time = NOW();
             """)
@@ -39,17 +39,23 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-                `date`,
-                SUM(pv) AS pv,
-                SUM(uv) AS uv,
-                SUM(uip) AS uip
+                tlas.`date`,
+                SUM(tlas.pv) AS pv,
+                SUM(tlas.uv) AS uv,
+                SUM(tlas.uip) AS uip
             FROM
-                t_link_access_stats
+                t_link tl INNER JOIN
+                t_link_access_stats tlas ON tl.full_short_url = tlas.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
-            GROUP BY full_short_url, gid, `date`;
+                tlas.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
+            GROUP BY
+                tlas.full_short_url,
+                tl.gid,
+                tlas.`date`;
             """)
     List<LinkAccessStatsDO> linkStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO shortLinkStatsReqDTO);
 
@@ -61,18 +67,22 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-            	sum(pv) AS pv,
-            	`hour`
+            	sum(tlas.pv) AS pv,
+            	tlas.`hour`
             FROM
-            	t_link_access_stats
+                t_link tl
+            	INNER JOIN t_link_access_stats tlas
+                ON tl.full_short_url = tlas.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlas.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-            	gid,
-            	full_short_url,
-            	`hour`;
+            	tl.gid,
+            	tlas.full_short_url,
+            	tlas.`hour`;
             """)
     List<LinkAccessStatsDO> listHourStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
@@ -84,18 +94,22 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-            	weekday,
-            	sum(pv) AS pv
+            	tlas.weekday,
+            	sum(tlas.pv) AS pv
             FROM
-            	t_link_access_stats
+                t_link tl
+            	INNER JOIN t_link_access_stats tlas
+                ON tl.full_short_url = tlas.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlas.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-            	gid,
-            	full_short_url,
-            	weekday;
+            	tl.gid,
+            	tlas.full_short_url,
+            	tlas.weekday;
             """)
     List<LinkAccessStatsDO> listWeekdayStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
@@ -107,16 +121,20 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-            	sum(pv) AS pv,
-            	`hour`
+             sum(tlas.pv) AS pv,
+             tlas.`hour`
             FROM
-            	t_link_access_stats
+                t_link tl INNER JOIN
+                t_link_access_stats tlas ON
+                tl.full_short_url = tlas.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-            	gid,
-            	`hour`;
+                tl.gid,
+                tlas.`hour`;
             """)
     List<LinkAccessStatsDO> listHourStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 
@@ -128,16 +146,20 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-            	weekday,
-            	sum(pv) AS pv
+            	tlas.weekday,
+            	sum(tlas.pv) AS pv
             FROM
-            	t_link_access_stats
+                t_link tl INNER JOIN
+                t_link_access_stats tlas ON
+                tl.full_short_url = tlas.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-            	gid,
-            	weekday;
+            	tl.gid,
+            	tlas.weekday;
             """)
     List<LinkAccessStatsDO> listWeekdayStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 
@@ -149,16 +171,23 @@ public interface LinkAccessStatsMapper extends BaseMapper<LinkAccessStatsDO> {
      */
     @Select("""
             SELECT
-                `date`,
-                SUM(pv) AS pv,
-                SUM(uv) AS uv,
-                SUM(uip) AS uip
+                tlas.`date`,
+                SUM(tlas.pv) AS pv,
+                SUM(tlas.uv) AS uv,
+                SUM(tlas.uip) AS uip
             FROM
-                t_link_access_stats
+                t_link tl INNER JOIN
+                t_link_access_stats tlas ON
+                tl.full_short_url = tlas.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
-            GROUP BY full_short_url, gid, `date`;
+                tl.gid = #{bean.gid}
+            AND tlas.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
+            GROUP BY
+                tlas.full_short_url,
+                tl.gid,
+                tlas.`date`;
             """)
     List<LinkAccessStatsDO> linkStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

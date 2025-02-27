@@ -23,11 +23,10 @@ public interface LinkNetworkStatsMapper extends BaseMapper<LinkNetworkStatsDO> {
      *
      * @param linkNetworkStatsDO 短链接访问网络数据实体
      */
-    @Insert(
-            """
-            INSERT INTO t_link_network_stats(full_short_url, gid, date, cnt, network, create_time, update_time, del_flag )
+    @Insert("""
+            INSERT INTO t_link_network_stats(full_short_url, date, cnt, network, create_time, update_time, del_flag)
                 VALUES
-                    (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.cnt}, #{bean.network}, NOW(), NOW(),0)
+                    (#{bean.fullShortUrl}, #{bean.date}, #{bean.cnt}, #{bean.network}, NOW(), NOW(), 0)
                 ON DUPLICATE KEY UPDATE
                     cnt = cnt + #{bean.cnt}, update_time = NOW();
             """)
@@ -38,18 +37,22 @@ public interface LinkNetworkStatsMapper extends BaseMapper<LinkNetworkStatsDO> {
      */
     @Select("""
             SELECT
-            	network,
-            	sum(cnt) as cnt
+            	tlns.network,
+            	sum(tlns.cnt) as cnt
             FROM
-            	t_link_network_stats
+                t_link tl INNER JOIN
+            	t_link_network_stats tlns ON
+                tl.full_short_url = tlns.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlns.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlns.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-            	gid,
-            	full_short_url,
-            	network
+            	tl.gid,
+            	tlns.full_short_url,
+            	tlns.network
             """)
     List<HashMap<String, Object>> listNetworkStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
@@ -58,16 +61,20 @@ public interface LinkNetworkStatsMapper extends BaseMapper<LinkNetworkStatsDO> {
      */
     @Select("""
             SELECT
-            	network,
-            	sum(cnt) as cnt
+            	tlns.network,
+            	sum(tlns.cnt) as cnt
             FROM
-            	t_link_network_stats
+                t_link tl INNER JOIN
+            	t_link_network_stats tlns ON
+                tl.full_short_url = tlns.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlns.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-            	gid,
-            	network
+            	tl.gid,
+            	tlns.network
             """)
     List<HashMap<String, Object>> listNetworkStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

@@ -3,22 +3,32 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.offer.shortlink.project.dao.mapper.ShortLinkMapper">
 
+    <!--短链接访问统计自增-->
+    <update id="incrementStats">
+        UPDATE t_link
+        SET total_pv  = total_pv + #{totalPv},
+            total_uv  = total_uv + #{totalUv},
+            total_uip = total_uip + #{totalUip}
+        WHERE gid = #{gid}
+          AND full_short_url = #{fullShortUrl}
+    </update>
+
     <select id="pageLink" parameterType="com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO"
             resultType="com.offer.shortlink.project.dao.entity.ShortLinkDO">
         SELECT
-            t.*,
-            COALESCE ( s.today_pv, 0 ) AS todayPv,
-            COALESCE ( s.today_uv, 0 ) AS todayUv,
-            COALESCE ( s.today_uip, 0 ) AS todayUip
+        tl.*,
+        COALESCE (tlst.today_pv, 0) AS todayPv,
+        COALESCE (tlst.today_uv, 0) AS todayUv,
+        COALESCE (tlst.today_uip, 0) AS todayUip
         FROM
-            t_link t
-                LEFT JOIN t_link_stats_today s ON t.gid = s.gid
-                AND t.full_short_url = s.full_short_url
-                AND s.date = CURDATE()
+        t_link tl LEFT JOIN
+        t_link_stats_today tlst ON
+        tl.full_short_url = tlst.full_short_url
+        AND tlst.date = CURDATE()
         WHERE
-            t.gid = #{gid}
-            AND t.enable_status = 0
-            AND t.del_flag = 0
+        tl.gid = #{gid}
+        AND tl.enable_status = 0
+        AND tl.del_flag = 0
         <choose>
             <when test="orderTag == 'todayPv'">
                 ORDER BY todayPv DESC
@@ -30,18 +40,39 @@
                 ORDER BY todayUip DESC
             </when>
             <when test="orderTag == 'totalPv'">
-                ORDER BY t.total_uv DESC
+                ORDER BY tl.total_uv DESC
             </when>
             <when test="orderTag == 'totalUv'">
-                ORDER BY t.total_pv DESC
+                ORDER BY tl.total_pv DESC
             </when>
             <when test="orderTag == 'totalUip'">
-                ORDER BY t.total_uip DESC
+                ORDER BY tl.total_uip DESC
             </when>
             <otherwise>
-                ORDER BY t.create_time DESC
+                ORDER BY tl.create_time DESC
             </otherwise>
         </choose>
+    </select>
+
+    <!--分页统计回收站短链接-->
+    <select id="pageRecycleBinLink" parameterType="com.offer.shortlink.project.dto.req.ShortLinkPageReqDTO"
+            resultType="com.offer.shortlink.project.dao.entity.ShortLinkDO">
+        SELECT tl.*,
+        COALESCE(tlst.today_pv, 0) as pv,
+        COALESCE(tlst.today_uv, 0) as uv,
+        COALESCE(tlst.today_uip, 0) as uip
+        FROM t_link tl LEFT JOIN
+        t_link_stats_today tlst ON
+        tl.full_short_url = tlst.full_short_url
+        AND tlst.date = CURDATE()
+        WHERE tl.gid IN
+        <foreach collection="gidList" item="item" index="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND tl.enable_status = '1'
+        AND tl.del_flag = '0'
+        AND tl.del_time = 0
+        ORDER BY tl.update_time
     </select>
 
 </mapper>

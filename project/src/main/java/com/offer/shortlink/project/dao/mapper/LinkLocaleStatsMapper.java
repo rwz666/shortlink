@@ -24,9 +24,9 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
      * @param linkLocaleStatsDO 短链接访问地区数据实体
      */
     @Insert("""
-            INSERT INTO t_link_locale_stats(full_short_url, gid, date, province, city, adcode, cnt, country, create_time, update_time, del_flag)
+            INSERT INTO t_link_locale_stats(full_short_url, date, province, city, adcode, cnt, country, create_time, update_time, del_flag)
                 VALUES
-                    (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.province}, #{bean.city}, #{bean.adcode}, #{bean.cnt}, #{bean.country}, NOW(), NOW(), 0)
+                    (#{bean.fullShortUrl}, #{bean.date}, #{bean.province}, #{bean.city}, #{bean.adcode}, #{bean.cnt}, #{bean.country}, NOW(), NOW(), 0)
                 ON DUPLICATE KEY UPDATE
                     cnt = cnt + #{bean.cnt}, update_time = now();
             """)
@@ -40,16 +40,22 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
      */
     @Select("""
             SELECT
-                SUM(cnt) as cnt,
-                province AS locale
+                SUM(tlls.cnt) as cnt,
+                tlls.province AS locale
             FROM
-                t_link_locale_stats
+                t_link tl
+                INNER JOIN t_link_locale_stats tlls
+                ON tl.full_short_url = tlls.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
-            AND del_flag = '0'
-            GROUP BY full_short_url, gid, province
+                tlls.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlls.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
+            GROUP BY
+                tlls.full_short_url,
+                tl.gid,
+                tlls.province
             LIMIT 10;
             """)
     List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
@@ -62,15 +68,20 @@ public interface LinkLocaleStatsMapper extends BaseMapper<LinkLocaleStatsDO> {
      */
     @Select("""
             SELECT
-                SUM(cnt) as cnt,
-                province AS locale
+                SUM(tlls.cnt) as cnt,
+                tlls.province AS locale
             FROM
-                t_link_locale_stats
+                t_link tl INNER JOIN
+                t_link_locale_stats tlls ON
+                tl.full_short_url = tlls.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
-            AND del_flag = '0'
-            GROUP BY gid, province
+                tl.gid = #{bean.gid}
+            AND tlls.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
+            GROUP BY
+                tl.gid,
+                tlls.province
             LIMIT 10;
             """)
     List<ShortLinkStatsLocaleCNTop10RespDTO> listLocaleTop10ByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);

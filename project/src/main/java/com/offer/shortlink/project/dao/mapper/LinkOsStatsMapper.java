@@ -24,9 +24,9 @@ public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsDO> {
      * @param linkOsStatsDO 短链接访问操作系统实体
      */
     @Insert("""
-            INSERT INTO t_link_os_stats(full_short_url, gid, date, os, cnt, create_time, update_time, del_flag)
+            INSERT INTO t_link_os_stats(full_short_url, date, os, cnt, create_time, update_time, del_flag)
             VALUES
-                (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.os}, #{bean.cnt}, NOW(), NOW(), 0)
+                (#{bean.fullShortUrl}, #{bean.date}, #{bean.os}, #{bean.cnt}, NOW(), NOW(), 0)
             ON DUPLICATE KEY UPDATE
                 cnt = cnt + #{bean.cnt}, update_time = now();
             """)
@@ -40,18 +40,22 @@ public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsDO> {
      */
     @Select("""
             SELECT
-            	os,
-            	sum(cnt) as cnt
+            	tlos.os,
+            	sum(tlos.cnt) as cnt
             FROM
-            	t_link_os_stats
+                t_link tl INNER JOIN
+            	t_link_os_stats tlos ON
+                tl.full_short_url = tlos.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlos.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlos.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-            	gid,
-            	full_short_url,
-            	os;
+            	tl.gid,
+            	tlos.full_short_url,
+            	tlos.os;
             """)
     List<HashMap<String, Object>> listOsStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
@@ -63,16 +67,20 @@ public interface LinkOsStatsMapper extends BaseMapper<LinkOsStatsDO> {
      */
     @Select("""
             SELECT
-            	os,
-            	sum(cnt) as cnt
+            	tlos.os,
+            	sum(tlos.cnt) as cnt
             FROM
-            	t_link_os_stats
+                t_link tl INNER JOIN
+                t_link_os_stats tlos ON
+                tl.full_short_url = tlos.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlos.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-            	gid,
-            	os;
+            	tl.gid,
+            	tlos.os;
             """)
     List<HashMap<String, Object>> listOsStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

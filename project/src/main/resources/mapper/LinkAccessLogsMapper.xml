@@ -6,61 +6,147 @@
     <!--根据用户查询Uv类型（新老访客）-->
     <select id="selectUvTypeByUsers" resultType="java.util.HashMap">
         SELECT
-        user,
-        IF(MIN(create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
+        tlal.user,
+        IF(MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
         FROM
-        t_link_access_logs
+        t_link tl INNER JOIN
+        t_link_access_logs tlal ON
+        tl.full_short_url = tlal.full_short_url
         WHERE
-        full_short_url = #{fullShortUrl}
-        AND gid = #{gid}
-        AND user IN
+        tlal.full_short_url = #{fullShortUrl}
+        AND tl.gid = #{gid}
+        AND tl.del_flag = '0'
+        AND tl.enable_status = #{enableStatus}
+        AND tlal.user IN
         <foreach item="user" index="index" collection="userSetList" open="(" separator="," close=")">
             #{user}
         </foreach>
         GROUP BY
-        user
+        tlal.user
     </select>
 
     <!--根据分组用户查询Uv类型（新老访客）-->
     <select id="selectGroupUvTypeByUsers" resultType="java.util.HashMap">
         SELECT
-        user,
-        IF(MIN(create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
+        tlal.user,
+        IF(MIN(tlal.create_time) BETWEEN #{startDate} AND #{endDate}, '新访客', '老访客') AS uvType
         FROM
-        t_link_access_logs
+        t_link tl INNER JOIN
+        t_link_access_logs tlal ON
+        tl.full_short_url = tlal.full_short_url
         WHERE
-        gid = #{gid}
-        AND user IN
+        tl.gid = #{gid}
+        AND tl.del_flag = '0'
+        AND tl.enable_status = '0'
+        AND tlal.user IN
         <foreach item="user" index="index" collection="userSetList" open="(" separator="," close=")">
             #{user}
         </foreach>
         GROUP BY
-        user
+        tlal.user
     </select>
 
     <!--根据日志表查询PvUvUip数据-->
-    <select id="findPvUvUipStatsByShortLink"
-            resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
-        SELECT full_short_url,
-               gid,
-               count(USER)          AS pv,
-               count(DISTINCT USER) AS uv,
-               count(DISTINCT ip)   AS uip
-        FROM t_link_access_logs
-        WHERE gid = #{bean.gid}
-          AND full_short_url = #{bean.fullShortUrl}
-          AND create_time BETWEEN #{bean.startDate} and #{bean.endDate}
-        GROUP BY full_short_url, gid;
+    <select id="findPvUvUipStatsByShortLink" resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
+        SELECT tlal.full_short_url,
+               tl.gid,
+               count(tlal.user)          AS pv,
+               count(DISTINCT tlal.user) AS uv,
+               count(DISTINCT tlal.ip)   AS uip
+        FROM t_link tl
+                 INNER JOIN
+             t_link_access_logs tlal ON
+                 tl.full_short_url = tlal.full_short_url
+        WHERE tl.gid = #{bean.gid}
+          AND tlal.full_short_url = #{bean.fullShortUrl}
+          AND tlal.create_time BETWEEN #{bean.startDate} and #{bean.endDate}
+          AND tl.del_flag = '0'
+          AND tl.enable_status = #{bean.enableStatus}
+        GROUP BY tlal.full_short_url,
+                 tl.gid;
     </select>
 
     <!--根据分组获取指定日期内新老用户访客数据-->
     <select id="findPvUvUipStatsByGroup" resultType="com.offer.shortlink.project.dao.entity.LinkAccessStatsDO">
-        SELECT gid,
-               count(USER)          AS pv,
-               count(DISTINCT USER) AS uv,
-               count(DISTINCT ip)   AS uip
-        FROM t_link_access_logs
-        WHERE gid = #{bean.gid}
-        GROUP BY gid;
+        SELECT tl.gid,
+               count(tlal.USER)          AS pv,
+               count(DISTINCT tlal.USER) AS uv,
+               count(DISTINCT tlal.ip)   AS uip
+        FROM t_link tl
+                 INNER JOIN
+             t_link_access_logs tlal ON
+                 tl.full_short_url = tlal.full_short_url
+        WHERE tl.gid = #{bean.gid}
+          AND tl.del_flag = '0'
+          AND tl.enable_status = '0'
+        GROUP BY tl.gid;
+    </select>
+
+    <!--高频IP访问统计（前五）-->
+    <select id="listTop5IpByShortLink" resultType="java.util.HashMap">
+        SELECT tlal.ip,
+               count(*) AS cnt
+        FROM t_link tl
+                 INNER JOIN
+             t_link_access_logs tlal ON
+                 tl.full_short_url = tlal.full_short_url
+        WHERE tlal.full_short_url = #{bean.fullShortUrl}
+          AND tl.gid = #{bean.gid}
+          AND tlal.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+          AND tl.del_flag = '0'
+          AND tl.enable_status = #{bean.enableStatus}
+        GROUP BY tl.gid,
+                 tlal.full_short_url,
+                 tlal.ip
+        LIMIT 5;
+    </select>
+
+    <!--根据短链接获取指定日期内新老用户访客数据-->
+    <select id="findUvTypeCntByShortLink" resultType="java.util.HashMap">
+        SELECT SUM(old_user) as oldUserCnt,
+               SUM(new_user) as newUserCnt
+        FROM (SELECT IF(COUNT(distinct DATE(tlal.create_time)) &gt; 1, 1, 0) as old_user,
+                     IF(COUNT(distinct DATE(tlal.create_time)) = 1 and MAX(tlal.create_time) &gt;= #{bean.startDate} and
+                        MAX(tlal.create_time) &lt;= #{bean.endDate}, 1, 0)   as new_user
+              FROM t_link tl
+                       INNER JOIN
+                   t_link_access_logs tlal ON
+                       tl.full_short_url = tlal.full_short_url
+              WHERE tl.gid = #{bean.gid}
+                AND tlal.full_short_url = #{bean.fullShortUrl}
+                AND tlal.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                AND tl.del_flag = '0'
+                AND tl.enable_status = #{bean.enableStatus}
+              GROUP BY tlal.user) AS user_counts;
+    </select>
+
+    <!--组高频IP访问统计（前五）-->
+    <select id="listTop5IpByGroup" resultType="java.util.HashMap">
+        SELECT tlal.ip,
+               count(*) AS cnt
+        FROM t_link tl
+                 INNER JOIN
+             t_link_access_logs tlal ON
+                 tl.full_short_url = tlal.full_short_url
+        WHERE tl.gid = #{bean.gid}
+          AND tlal.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+          AND tl.del_flag = '0'
+          AND tl.enable_status = '0'
+        GROUP BY tl.gid,
+                 tlal.ip
+        LIMIT 5;
+    </select>
+
+    <select id="selectGroupPage" resultType="com.offer.shortlink.project.dao.entity.LinkAccessLogsDO">
+        SELECT tlal.*
+        FROM t_link tl
+                 INNER JOIN
+             t_link_access_logs tlal ON
+                 tl.full_short_url = tlal.full_short_url
+        WHERE tl.gid = #{bean.gid}
+          AND tl.del_flag = '0'
+          AND tl.enable_status = '0'
+          AND tlal.create_time BETWEEN #{bean.startDate} AND #{bean.endDate}
+        ORDER BY tlal.create_time DESC
     </select>
 </mapper>

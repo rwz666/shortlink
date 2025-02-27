@@ -31,4 +31,9 @@ public class ShortLinkStatsReqDTO {
      * 结束时间
      */
     private Date endDate;
+
+    /**
+     * 启用状态
+     */
+    private Integer enableStatus;
 }

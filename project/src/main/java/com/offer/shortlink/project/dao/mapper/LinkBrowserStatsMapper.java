@@ -23,11 +23,10 @@ public interface LinkBrowserStatsMapper extends BaseMapper<LinkBrowserStatsDO> {
      *
      * @param linkBrowserStatsDO 短链接访问基础数据实体
      */
-    @Insert(
-            """
-            INSERT INTO t_link_browser_stats (full_short_url, gid, date, cnt, browser, create_time, update_time, del_flag )
+    @Insert("""
+            INSERT INTO t_link_browser_stats(full_short_url, date, cnt, browser, create_time, update_time, del_flag)
                 VALUES
-                    (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.cnt}, #{bean.browser}, NOW(), NOW(),0)
+                    (#{bean.fullShortUrl}, #{bean.date}, #{bean.cnt}, #{bean.browser}, NOW(), NOW(), 0)
                 ON DUPLICATE KEY UPDATE
                     cnt = cnt + #{bean.cnt}, update_time = NOW();
             """)
@@ -35,41 +34,51 @@ public interface LinkBrowserStatsMapper extends BaseMapper<LinkBrowserStatsDO> {
 
     /**
      * 短链接浏览器数据详情
+     *
      * @param requestParam 短链接访问基础数据实体
      */
     @Select("""
             SELECT
-            	browser,
-             	sum(cnt) as cnt
+            	tlbs.browser,
+             	sum(tlbs.cnt) as cnt
             FROM
-            	t_link_browser_stats
+                t_link tl
+            	INNER JOIN t_link_browser_stats tlbs
+                ON tlbs.full_short_url = tl.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlbs.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlbs.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-            	gid,
-             	full_short_url,
-             	browser;
+            	tl.gid,
+             	tlbs.full_short_url,
+             	tlbs.browser;
             """)
     List<HashMap<String, Object>> listBrowserStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
     /**
      * 分组短链接浏览器数据详情
+     *
      * @param requestParam 分组短链接访问基础数据实体
      */
     @Select("""
             SELECT
-            	browser,
-             	sum(cnt) as cnt
+            	tlbs.browser,
+             	sum(tlbs.cnt) as cnt
             FROM
-            	t_link_browser_stats
+                t_link tl INNER JOIN
+                t_link_browser_stats tlbs ON
+                tl.full_short_url = tlbs.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlbs.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-            	gid,
-             	browser;
+            	tl.gid,
+             	tlbs.browser;
             """)
     List<HashMap<String, Object>> listBrowserStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }

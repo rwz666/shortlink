@@ -24,9 +24,9 @@ public interface LinkDeviceStatsMapper extends BaseMapper<LinkDeviceStatsDO> {
      * @param linkDeviceStatsDO 短链接访问设备数据实体
      */
     @Insert("""
-            INSERT INTO t_link_device_stats(full_short_url, gid, date, cnt, device, create_time, update_time, del_flag )
+            INSERT INTO t_link_device_stats(full_short_url, date, cnt, device, create_time, update_time, del_flag)
                 VALUES
-                    (#{bean.fullShortUrl}, #{bean.gid}, #{bean.date}, #{bean.cnt}, #{bean.device}, NOW(), NOW(),0)
+                    (#{bean.fullShortUrl}, #{bean.date}, #{bean.cnt}, #{bean.device}, NOW(), NOW(), 0)
                 ON DUPLICATE KEY UPDATE
                     cnt = cnt + #{bean.cnt}, update_time = NOW();
             """)
@@ -37,18 +37,22 @@ public interface LinkDeviceStatsMapper extends BaseMapper<LinkDeviceStatsDO> {
      */
     @Select("""
             SELECT
-                device,
-                sum( cnt )  as cnt
+                tlds.device,
+                sum(tlds.cnt)  as cnt
             FROM
-                t_link_device_stats
+                t_link tl INNER JOIN
+                t_link_device_stats tlds ON
+                tl.full_short_url = tlds.full_short_url
             WHERE
-                full_short_url = #{bean.fullShortUrl}
-            AND gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tlds.full_short_url = #{bean.fullShortUrl}
+            AND tl.gid = #{bean.gid}
+            AND tlds.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = #{bean.enableStatus}
             GROUP BY
-                gid,
-                full_short_url,
-                device
+                tl.gid,
+                tlds.full_short_url,
+                tlds.device
             """)
     List<HashMap<String, Object>> listDeviceStatsByShortLink(@Param("bean") ShortLinkStatsReqDTO requestParam);
 
@@ -57,16 +61,20 @@ public interface LinkDeviceStatsMapper extends BaseMapper<LinkDeviceStatsDO> {
      */
     @Select("""
             SELECT
-                device,
-                sum( cnt )  as cnt
+                tlds.device,
+                sum(tlds.cnt)  as cnt
             FROM
-                t_link_device_stats
+                t_link tl INNER JOIN
+                t_link_device_stats tlds ON
+                tl.full_short_url = tlds.full_short_url
             WHERE
-                gid = #{bean.gid}
-            AND `date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+                tl.gid = #{bean.gid}
+            AND tlds.`date` BETWEEN #{bean.startDate} AND #{bean.endDate}
+            AND tl.del_flag = '0'
+            AND tl.enable_status = '0'
             GROUP BY
-                gid,
-                device
+                tl.gid,
+                tlds.device
             """)
     List<HashMap<String, Object>> listDeviceStatsByGroup(@Param("bean") ShortLinkGroupStatsReqDTO requestParam);
 }
