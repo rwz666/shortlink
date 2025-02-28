@@ -76,12 +76,8 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
         }
         try {
             Map<String, String> producerMap = message.getValue();
-            String fullShortUrl = producerMap.get("fullShortUrl");
-            if (StrUtil.isNotBlank(fullShortUrl)) {
-                String gid = producerMap.get("gid");
-                ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
-                actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
-            }
+            ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
+            actualSaveShortLinkStats(statsRecord);
             // 消息消费完成，将其从redis中删除
             stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());
         } catch (Throwable e) {
@@ -104,12 +100,8 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
             throw new ServiceException("[RocketMQ 消息队列] 消息未成功处理，需要消息队列重试");
         }
         try {
-            String fullShortUrl = producerMap.get("fullShortUrl");
-            if (StrUtil.isNotBlank(fullShortUrl)) {
-                String gid = producerMap.get("gid");
-                ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
-                actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
-            }
+            ShortLinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortLinkStatsRecordDTO.class);
+            actualSaveShortLinkStats(statsRecord);
         } catch (Throwable e) {
             log.error("记录短链接监控消费异常", e);
             throw e;
@@ -118,19 +110,16 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
     }
 
 
-    private void actualSaveShortLinkStats(String fullShortUrl, String gid, ShortLinkStatsRecordDTO statsRecord) {
-        fullShortUrl = Optional.ofNullable(fullShortUrl).orElse(statsRecord.getFullShortUrl());
+    private void actualSaveShortLinkStats(ShortLinkStatsRecordDTO statsRecord) {
+        String fullShortUrl = statsRecord.getFullShortUrl();
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
         RLock rLock = readWriteLock.writeLock();
         rLock.lock();
         try {
-            //gid为null，重新查询数据库获取
-            if (StrUtil.isBlank(gid)) {
-                LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
-                        .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
-                ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
-                gid = shortLinkGotoDO.getGid();
-            }
+            LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                    .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+            ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(queryWrapper);
+            String gid = shortLinkGotoDO.getGid();
             Date nowDate = new Date();
             //1.基础访问数据统计
             Week weekday = DateUtil.dayOfWeekEnum(nowDate);

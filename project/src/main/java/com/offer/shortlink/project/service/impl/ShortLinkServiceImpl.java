@@ -278,7 +278,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(originalLink)) {
             ShortLinkStatsRecordDTO statsRecordDTO = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-            shortLinkStats(null, fullShortUrl, statsRecordDTO);
+            shortLinkStats(statsRecordDTO);
             response.sendRedirect(originalLink);
             return;
         }
@@ -298,7 +298,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
             if (StrUtil.isNotBlank(originalLink)) {
                 ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-                shortLinkStats(null, fullShortUrl, statsRecord);
+                shortLinkStats(statsRecord);
                 response.sendRedirect(originalLink);
                 return;
             }
@@ -328,7 +328,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     LinkUtil.getLinkCacheValidDate(shortLinkDO.getValidDate()), TimeUnit.MILLISECONDS
             );
             ShortLinkStatsRecordDTO statsRecord = buildLinkStatsRecordAndSetUser(fullShortUrl, request, response);
-            shortLinkStats(shortLinkDO.getGid(), fullShortUrl, statsRecord);
+            shortLinkStats(statsRecord);
             response.sendRedirect(originUrl);
         } finally {
             lock.unlock();
@@ -385,10 +385,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .build();
     }
 
-    public void shortLinkStats(String gid, String fullShortUrl, ShortLinkStatsRecordDTO statsRecord) {
+    public void shortLinkStats(ShortLinkStatsRecordDTO statsRecord) {
         HashMap<String, String> producerMap = new HashMap<>();
-        producerMap.put("fullShortUrl", fullShortUrl);
-        producerMap.put("gid", gid);
         producerMap.put("statsRecord", JSON.toJSONString(statsRecord));
         shortLinkStatsSaveProducer.send(producerMap);
     }
