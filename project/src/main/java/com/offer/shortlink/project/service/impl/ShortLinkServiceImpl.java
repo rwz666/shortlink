@@ -153,7 +153,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     @Override
     public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
         IPage<ShortLinkDO> resultPage = baseMapper.pageLink(requestParam);
-         return resultPage.convert(item -> {
+        return resultPage.convert(item -> {
             ShortLinkPageRespDTO result = BeanUtil.toBean(item, ShortLinkPageRespDTO.class);
             result.setDomain("http://" + result.getDomain());
             return result;
@@ -218,12 +218,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .eq(ShortLinkDO::getGid, hasShortLink.getGid())
                         .eq(ShortLinkDO::getEnableStatus, 0)
                         .eq(ShortLinkDO::getDelTime, 0L)
-                        .eq(ShortLinkDO::getDelFlag, 0);
-                ShortLinkDO delShortLinkDO = ShortLinkDO.builder()
-                        .delTime(System.currentTimeMillis())
-                        .build();
-                delShortLinkDO.setDelFlag(1);
-                baseMapper.update(delShortLinkDO, updateWrapper);
+                        .eq(ShortLinkDO::getDelFlag, 0)
+                        .set(ShortLinkDO::getDelFlag, 1)
+                        .set(ShortLinkDO::getDelTime, System.currentTimeMillis());
+                baseMapper.update(null, updateWrapper);
                 ShortLinkDO shortLinkDO = ShortLinkDO.builder()
                         .domain(shortLinkDefaultDomain)
                         .shortUri(hasShortLink.getShortUri())
@@ -237,10 +235,17 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .totalPv(hasShortLink.getTotalPv())
                         .totalUv(hasShortLink.getTotalUv())
                         .totalUip(hasShortLink.getTotalUip())
+                        .enableStatus(hasShortLink.getEnableStatus())
                         .delTime(0L)
                         .build();
                 baseMapper.insert(shortLinkDO);
-
+                LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                        .eq(ShortLinkGotoDO::getFullShortUrl, requestParam.getFullShortUrl())
+                        .eq(ShortLinkGotoDO::getGid, hasShortLink.getGid());
+                ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+                shortLinkGotoMapper.delete(linkGotoQueryWrapper);
+                shortLinkGotoDO.setGid(requestParam.getGid());
+                shortLinkGotoMapper.insert(shortLinkGotoDO);
             } finally {
                 rLock.unlock();
             }
@@ -248,7 +253,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }
 
         if (!Objects.equals(hasShortLink.getValidDateType(), requestParam.getValidDateType())
-                || !Objects.equals(hasShortLink.getValidDate(), requestParam.getValidDate())) {
+                || !Objects.equals(hasShortLink.getValidDate(), requestParam.getValidDate())
+                || !Objects.equals(hasShortLink.getOriginUrl(), requestParam.getOriginUrl())) {
             stringRedisTemplate.delete(String.format(GOTO_SHORT_LINK_KEY, hasShortLink.getFullShortUrl()));
 
             if (hasShortLink.getValidDate() != null && hasShortLink.getValidDate().before(new Date())) {
