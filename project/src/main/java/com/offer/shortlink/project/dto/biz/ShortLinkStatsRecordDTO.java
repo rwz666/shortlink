@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 /**
  * @author rwz
  * @since 2025/2/18
@@ -65,4 +67,9 @@ public class ShortLinkStatsRecordDTO {
      * 消息队列唯一标识
      */
     private String keys;
+
+    /**
+     * 当前时间
+     */
+    private Date currentDate;
 }
