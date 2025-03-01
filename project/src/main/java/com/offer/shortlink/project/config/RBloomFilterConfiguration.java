@@ -18,4 +18,11 @@ public class RBloomFilterConfiguration {
         cachePenetrationBloomFilter.tryInit(100000000L, 0.001);
         return cachePenetrationBloomFilter;
     }
+
+    @Bean
+    public RBloomFilter<String> gidRegisterCachePenetrationBloomFilter(RedissonClient redissonClient) {
+        RBloomFilter<String> cachePenetrationBloomFilter = redissonClient.getBloomFilter("gidRegisterCachePenetrationBloomFilter");
+        cachePenetrationBloomFilter.tryInit(200000000L, 0.001);
+        return cachePenetrationBloomFilter;
+    }
 }
