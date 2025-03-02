@@ -217,8 +217,6 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
                     .date(currentDate)
                     .build();
             linkStatsTodayMapper.shortLinkTodayStats(linkStatsTodayDO);
-        } catch (Throwable e) {
-            log.error("短链接：{}访问量统计异常", fullShortUrl, e);
         } finally {
             rLock.unlock();
         }
