@@ -28,6 +28,11 @@ public class RedisKeyConstant {
     public static final String LOCK_GID_UPDATE_KEY = "short-link:lock:update-gid:%s";
 
     /**
+     * 短链接创建 ID 锁 Key
+     */
+    public static final String SHORT_LINK_CREATE_LOCK_KEY = "short-link:lock:create";
+
+    /**
      * 短链接延迟队列消费统计 Key
      */
     public static final String DELAY_QUEUE_STATS_KEY = "short-link:delay-queue:stats";

@@ -15,8 +15,10 @@ import com.offer.shortlink.project.common.convention.exception.ClientException;
 import com.offer.shortlink.project.common.convention.exception.ServiceException;
 import com.offer.shortlink.project.common.enums.ValidDateTypeEnum;
 import com.offer.shortlink.project.config.GotoDomainWhiteListConfiguration;
-import com.offer.shortlink.project.dao.entity.*;
-import com.offer.shortlink.project.dao.mapper.*;
+import com.offer.shortlink.project.dao.entity.ShortLinkDO;
+import com.offer.shortlink.project.dao.entity.ShortLinkGotoDO;
+import com.offer.shortlink.project.dao.mapper.ShortLinkGotoMapper;
+import com.offer.shortlink.project.dao.mapper.ShortLinkMapper;
 import com.offer.shortlink.project.dto.biz.ShortLinkStatsRecordDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkBatchCreateReqDTO;
 import com.offer.shortlink.project.dto.req.ShortLinkCreateReqDTO;
@@ -125,6 +127,64 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .fullShortUrl("http://" + shortLinkDO.getFullShortUrl())
                 .build();
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ShortLinkCreateRespDTO createShortLinkByLock(ShortLinkCreateReqDTO requestParam) {
+        verificationWhitelist(requestParam.getOriginUrl());
+        RLock lock = redissonClient.getLock(SHORT_LINK_CREATE_LOCK_KEY);
+        lock.lock();
+        try {
+            String shortLinkSuffix = generateShortLinkSuffixByLock(requestParam);
+            String fullShortUrl = shortLinkDefaultDomain + "/" + shortLinkSuffix;
+            ShortLinkDO shortLinkDO = ShortLinkDO.builder()
+                    .domain(shortLinkDefaultDomain)
+                    .originUrl(requestParam.getOriginUrl())
+                    .gid(requestParam.getGid())
+                    .createType(requestParam.getCreateType())
+                    .validDateType(requestParam.getValidDateType())
+                    .validDate(requestParam.getValidDate())
+                    .describe(requestParam.getDescribe())
+                    .favicon(getFaviconUrl(requestParam.getOriginUrl()))
+                    .shortUri(shortLinkSuffix)
+                    .fullShortUrl(fullShortUrl)
+                    .enableStatus(0)
+                    .delTime(0L)
+                    .totalPv(0)
+                    .totalUv(0)
+                    .totalUip(0)
+                    .build();
+            ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
+                    .gid(requestParam.getGid())
+                    .fullShortUrl(fullShortUrl)
+                    .build();
+            try {
+                baseMapper.insert(shortLinkDO);
+                shortLinkGotoMapper.insert(shortLinkGotoDO);
+            } catch (DuplicateKeyException ex) {
+                //数据库插入失败，索引冲突
+                if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
+                    shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
+                }
+                throw new ServiceException(String.format("短链接：%s 生成重复", fullShortUrl));
+            }
+            stringRedisTemplate.opsForValue().set(
+                    String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                    requestParam.getOriginUrl(),
+                    LinkUtil.getLinkCacheValidDate(requestParam.getValidDate()), TimeUnit.MILLISECONDS
+            );
+            shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
+            return ShortLinkCreateRespDTO
+                    .builder()
+                    .gid(requestParam.getGid())
+                    .originUrl(requestParam.getOriginUrl())
+                    .fullShortUrl("http://" + shortLinkDO.getFullShortUrl())
+                    .build();
+        } finally {
+            lock.unlock();
+        }
+    }
+
 
     @Override
     public ShortLinkBatchCreateRespDTO batchCreateShortLink(ShortLinkBatchCreateReqDTO requestParam) {
@@ -408,6 +468,30 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             originUrl += UUID.randomUUID().toString();
             shortUri = HashUtil.hashToBase62(originUrl);
             if (!shortUriCreateCachePenetrationBloomFilter.contains(shortLinkDefaultDomain + "/" + shortUri)) {
+                break;
+            }
+            curGenerateCount++;
+        }
+        return shortUri;
+    }
+
+    private String generateShortLinkSuffixByLock(ShortLinkCreateReqDTO requestParam) {
+        int curGenerateCount = 0;
+        String shortUri;
+        while (true) {
+            if (curGenerateCount > 10) {
+                throw new ServiceException("短链接频繁生成，请稍后重试");
+            }
+            String originUrl = requestParam.getOriginUrl();
+            originUrl += UUID.randomUUID().toString();
+            shortUri = HashUtil.hashToBase62(originUrl);
+            LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getGid, requestParam.getGid())
+                    .eq(ShortLinkDO::getFullShortUrl, shortLinkDefaultDomain + "/" + shortUri)
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getDelTime, 0);
+            ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+            if (shortLinkDO == null) {
                 break;
             }
             curGenerateCount++;
