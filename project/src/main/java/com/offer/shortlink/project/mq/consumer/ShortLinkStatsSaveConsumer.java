@@ -113,7 +113,7 @@ public class ShortLinkStatsSaveConsumer implements StreamListener<String, MapRec
     private void actualSaveShortLinkStats(ShortLinkStatsRecordDTO statsRecord) {
         String fullShortUrl = statsRecord.getFullShortUrl();
         RReadWriteLock readWriteLock = redissonClient.getReadWriteLock(String.format(LOCK_GID_UPDATE_KEY, fullShortUrl));
-        RLock rLock = readWriteLock.writeLock();
+        RLock rLock = readWriteLock.readLock();
         rLock.lock();
         try {
             LambdaQueryWrapper<ShortLinkGotoDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
