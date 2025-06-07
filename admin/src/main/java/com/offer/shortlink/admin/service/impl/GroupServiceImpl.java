@@ -20,6 +20,7 @@ import com.offer.shortlink.admin.remote.ShortLinkRemoteClient;
 import com.offer.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import com.offer.shortlink.admin.service.GroupService;
 import com.offer.shortlink.admin.toolkit.RandomStringUtil;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
@@ -48,7 +49,8 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     private final ShortLinkRemoteClient shortLinkRemoteClient;
 
     private final RedissonClient redissonClient;
-    private final RBloomFilter<String> gidRegisterCachePenetrationBloomFilter;
+    @Resource(name = "gidRegisterCachePenetrationBloomFilter")
+    private RBloomFilter<String> gidRegisterCachePenetrationBloomFilter;
     private final GroupUniqueMapper groupUniqueMapper;
 
     @Value("${short-link.group.max-num}")

@@ -12,14 +12,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RBloomFilterConfiguration {
 
-    @Bean
+    @Bean("shortUriCreateCachePenetrationBloomFilter")
     public RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter(RedissonClient redissonClient) {
         RBloomFilter<String> cachePenetrationBloomFilter = redissonClient.getBloomFilter("shortUriCreateCachePenetrationBloomFilter");
         cachePenetrationBloomFilter.tryInit(100000000L, 0.001);
         return cachePenetrationBloomFilter;
     }
 
-    @Bean
+    @Bean("gidRegisterCachePenetrationBloomFilter")
     public RBloomFilter<String> gidRegisterCachePenetrationBloomFilter(RedissonClient redissonClient) {
         RBloomFilter<String> cachePenetrationBloomFilter = redissonClient.getBloomFilter("gidRegisterCachePenetrationBloomFilter");
         cachePenetrationBloomFilter.tryInit(200000000L, 0.001);

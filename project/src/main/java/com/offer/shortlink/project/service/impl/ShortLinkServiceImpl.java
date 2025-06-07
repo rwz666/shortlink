@@ -29,6 +29,7 @@ import com.offer.shortlink.project.mq.producer.ShortLinkStatsSaveProducer;
 import com.offer.shortlink.project.service.ShortLinkService;
 import com.offer.shortlink.project.toolkit.HashUtil;
 import com.offer.shortlink.project.toolkit.LinkUtil;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -66,7 +67,8 @@ import static com.offer.shortlink.project.common.constant.RedisKeyConstant.*;
 @RequiredArgsConstructor
 public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLinkDO> implements ShortLinkService {
 
-    private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
+    @Resource(name = "shortUriCreateCachePenetrationBloomFilter")
+    private RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
     private final ShortLinkGotoMapper shortLinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
