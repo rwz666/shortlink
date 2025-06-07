@@ -22,9 +22,13 @@ spring:
     nacos:
       discovery:
         server-addr: 192.168.36.100:8848
+  ai:
+    ollama:
+      chat:
+        model: deepseek-r1:1.5b
+      base-url: http://localhost:11434
 message-queue:
   select: mq # 消息队列的实现方式 redis / mq
-
 
 mybatis-plus:
   global-config:
